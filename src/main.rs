@@ -9,7 +9,12 @@ fn main() {
     loop {
         let mut input = String::new();
         let _ = stdin().read_line(&mut input);
-        let mut stream = TcpStream::connect(socket).unwrap();
+
+        let mut stream = match TcpStream::connect(socket) {
+            Ok(stream) => stream,
+            Err(..) => continue
+        };
+
         let _ = stream.write(&input.into_bytes());
     }
 }
