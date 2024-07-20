@@ -19,7 +19,7 @@ pub enum TokenType {
     IDENTIFIER,
 
     // Keywords
-    CREATE, DELETE, DATABASE, TABLE
+    CREATE, DELETE, USE, DATABASE, TABLE
 }
 
 pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
@@ -55,6 +55,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> (Token, Option
     let mut keywords: HashMap<String, TokenType> = HashMap::new();
     keywords.insert(String::from("CREATE"), TokenType::CREATE);
     keywords.insert(String::from("DELETE"), TokenType::DELETE);
+    keywords.insert(String::from("USE"), TokenType::USE);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
 
