@@ -5,6 +5,9 @@ version = 3
 [[package]]
 name = "database"
 version = "0.1.0"
+dependencies = [
+ "lexer",
+]
 
 [[package]]
 name = "database-kenji"
@@ -12,3 +15,7 @@ version = "0.1.0"
 dependencies = [
  "database",
 ]
+
+[[package]]
+name = "lexer"
+version = "0.1.0"

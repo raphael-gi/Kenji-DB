@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "database"
 version = "0.1.0"
+dependencies = [
+ "lexer",
+]
+
+[[package]]
+name = "lexer"
+version = "0.1.0"
