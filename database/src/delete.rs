@@ -1,9 +1,8 @@
 use std::vec::IntoIter;
 
-use lexer::{Token, TokenType};
+use lexer::{Token,TokenType};
 
 use crate::commands;
-
 
 pub fn delete(tokens: &mut IntoIter<Token>) {
     match tokens.next() {

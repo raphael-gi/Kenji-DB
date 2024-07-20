@@ -2,7 +2,7 @@ use std::vec::IntoIter;
 
 use lexer::{Token,TokenType};
 
-use crate::commands;
+use crate::{commands, should_execute};
 
 pub fn create(tokens: &mut IntoIter<Token>) {
     match tokens.next() {
@@ -28,7 +28,8 @@ fn create_database(tokens: &mut IntoIter<Token>) {
         _ => return
     };
 
-    commands::create_database(database_name)
-
+    if should_execute(tokens.next()) {
+        commands::create_database(database_name);
+    }
 }
 

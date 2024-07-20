@@ -13,7 +13,7 @@ pub struct Token {
 #[derive(Clone, Copy, Debug)]
 pub enum TokenType {
     // Single Character
-    LEFTBRACE, RIGHTBRACE, COMMA,
+    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON,
 
     // Literals
     IDENTIFIER,
@@ -110,6 +110,7 @@ fn scan_token(character: u8) -> Result<Option<TokenType>, ()> {
     match character {
         b' ' => Ok(None),
         b'\n' => Ok(None),
+        b';' => Ok(Some(TokenType::SEMICOLON)),
         b'(' => Ok(Some(TokenType::LEFTBRACE)),
         b')' => Ok(Some(TokenType::RIGHTBRACE)),
         b',' => Ok(Some(TokenType::COMMA)),
