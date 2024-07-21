@@ -1,8 +1,7 @@
 use std::vec::IntoIter;
-
 use lexer::{Token,TokenType};
 
-use crate::{commands, should_execute};
+use crate::{commands::{self, Table, TableColumn}, get_name, should_execute};
 
 pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) {
     match tokens.next() {
@@ -42,20 +41,60 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) {
         Err(..) => return
     };
 
-    if should_execute(tokens.next()) {
-        commands::create_table(table_name, database)
+    match tokens.next() {
+        Some(token) => match token.token_type {
+            TokenType::LEFTBRACE => {
+                commands::create_table(Table {
+                    name: table_name,
+                    database: database.to_string(),
+                    rows: get_table_rows(tokens)
+                })
+            },
+            TokenType::SEMICOLON => {
+                commands::create_table(Table {
+                    name: table_name,
+                    database: database.to_string(),
+                    rows: Vec::new()
+                })
+            },
+            _ => return
+        },
+        None => return
     }
+
 }
 
-fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, ()> {
-    let token = match tokens.next() {
-        Some(token) => token,
-        None => return Err(())
-    };
+fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
+    let mut rows: Vec<TableColumn> = Vec::new();
 
-    match token.token_type {
-        TokenType::IDENTIFIER => Ok(token.value.unwrap()),
-        _ => Err(())
+    loop {
+        let name = match tokens.next() {
+            Some(token) => match token.token_type {
+                TokenType::IDENTIFIER => token.value.unwrap(),
+                _ => break
+            },
+            None => break
+        };
+
+        let data_type = match tokens.next() {
+            Some(token) => match token.token_type {
+                TokenType::STR => String::from("STR"),
+                TokenType::INT => String::from("INT"),
+                _ => break
+            },
+            None => break
+        };
+
+        match tokens.next() {
+            Some(token) => match token.token_type {
+                TokenType::SEMICOLON => rows.push(TableColumn { name, data_type }),
+                _ => break
+            },
+            None => break
+        };
     }
+
+    rows
 }
+
 

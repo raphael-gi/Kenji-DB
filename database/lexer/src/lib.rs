@@ -16,7 +16,7 @@ pub enum TokenType {
     LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON,
 
     // Literals
-    IDENTIFIER,
+    IDENTIFIER, STR, INT,
 
     // Keywords
     CREATE, DELETE, USE, DATABASE, TABLE
@@ -58,6 +58,8 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> (Token, Option
     keywords.insert(String::from("USE"), TokenType::USE);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
+    keywords.insert(String::from("STR"), TokenType::STR);
+    keywords.insert(String::from("INT"), TokenType::INT);
 
     let key = String::from_utf8(word.clone()).unwrap();
 

@@ -2,13 +2,16 @@ use std::vec::IntoIter;
 
 use lexer::{Token,TokenType};
 
-use crate::commands;
+use crate::{commands, get_name, should_execute};
 
-pub fn delete(tokens: &mut IntoIter<Token>) {
+pub fn delete(tokens: &mut IntoIter<Token>, database: &Option<String>) {
     match tokens.next() {
         Some(token) => match token.token_type {
             TokenType::DATABASE => delete_database(tokens),
-            TokenType::TABLE => {},
+            TokenType::TABLE => match database {
+                Some(database) => delete_table(tokens, database),
+                None => println!("Not using a database")
+            },
             _ => {}
         },
         None => print!("Nothing too delete")
@@ -16,16 +19,24 @@ pub fn delete(tokens: &mut IntoIter<Token>) {
 }
 
 fn delete_database(tokens: &mut IntoIter<Token>) {
-    let token = match tokens.next() {
-        Some(token) => token,
-        None => return
+    let database_name = match get_name(tokens) {
+        Ok(name) => name,
+        Err(..) => return
     };
 
-    let database_name = match token.token_type {
-        TokenType::IDENTIFIER => token.value.unwrap(),
-        _ => return
+    if should_execute(tokens.next()) {
+        commands::delete_database(database_name)
+    }
+}
+
+fn delete_table(tokens: &mut IntoIter<Token>, database: &String) {
+    let table_name = match get_name(tokens) {
+        Ok(name) => name,
+        Err(..) => return
     };
 
-    commands::delete_database(database_name)
+    if should_execute(tokens.next()) {
+        commands::delete_table(table_name, database.to_string())
+    }
 }
 

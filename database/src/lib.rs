@@ -24,7 +24,7 @@ pub fn spawn_listener(address: SocketAddrV4) {
                 match tokens.next() {
                     Some(token) => match token.token_type {
                         TokenType::CREATE => create(&mut tokens, &using_database),
-                        TokenType::DELETE => delete(&mut tokens),
+                        TokenType::DELETE => delete(&mut tokens, &using_database),
                         TokenType::USE => set_database(&mut tokens, &mut using_database),
                         _ => break
                     },
@@ -59,3 +59,14 @@ fn should_execute(token: Option<Token>) -> bool {
     }
 }
 
+fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, ()> {
+    let token = match tokens.next() {
+        Some(token) => token,
+        None => return Err(())
+    };
+
+    match token.token_type {
+        TokenType::IDENTIFIER => Ok(token.value.unwrap()),
+        _ => Err(())
+    }
+}
