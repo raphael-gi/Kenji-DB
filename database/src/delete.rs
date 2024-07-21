@@ -36,7 +36,7 @@ fn delete_table(tokens: &mut IntoIter<Token>, database: &String) {
     };
 
     if should_execute(tokens.next()) {
-        commands::delete_table(table_name, database.to_string())
+        commands::delete_table(table_name, database)
     }
 }
 

@@ -1,4 +1,4 @@
-use std::fs::{create_dir, remove_dir_all, remove_file, File};
+use std::{fs::{create_dir, remove_dir_all, remove_file, File}, io::Write};
 
 pub struct TableColumn {
     pub name: String,
@@ -11,41 +11,69 @@ pub struct Table {
     pub rows: Vec<TableColumn>
 }
 
+impl Table {
+    pub fn get_row_string(&self) -> String {
+        self.rows.iter().map(|table| {
+            format!("{},{}", table.name, table.data_type)
+        }).collect::<Vec<String>>().join(";")
+        // }).collect::<String>()
+    }
+}
+
 pub fn create_database(name: String) {
-    match create_dir(get_db_path(name)) {
+    match create_dir(get_db_path(&name)) {
         Ok(..) => println!("Created database"),
         Err(..) => println!("Failed to create database")
     };
 }
 
 pub fn delete_database(name: String) {
-    match remove_dir_all(get_db_path(name)) {
+    match remove_dir_all(get_db_path(&name)) {
         Ok(..) => println!("Deleted database"),
         Err(..) => println!("Failed to delete database")
     }
 }
 
 pub fn create_table(table: Table) {
-    let path = get_db_path(table.database);
-    match File::create(format!("{}/{}", path, table.name)) {
+    let path = get_table_path(&table.database, &table.name);
+    let config_path = get_table_config_path(&table.database, &table.name);
+
+    match File::create(path) {
         Ok(..) => println!("Created table"),
         Err(..) => println!("Failed to create table")
-    }
+    };
+    match File::create(config_path) {
+        Ok(mut config_file) => {
+            let content = table.get_row_string();
+            println!("{}", content);
+            config_file.write(content.as_bytes()).unwrap();
+        },
+        Err(..) => println!("Failed to create table")
+    };
 }
 
-pub fn delete_table(name: String, database: String) {
-    match remove_file(get_table_path(database, name)) {
-        Ok(..) => println!("Deleted table"),
-        Err(..) => println!("Failed to delete database")
+pub fn delete_table(name: String, database: &String) {
+    if remove_file(get_table_path(database, &name)).is_err() {
+        return println!("Failed to delete database");
     }
+
+    if remove_file(get_table_config_path(database, &name)).is_err() {
+        return println!("Failed to delete database");
+    }
+
+    println!("Deleted table");
 }
 
-fn get_table_path(db_name: String, table_name: String) -> String {
+fn get_table_config_path(db_name: &String, table_name: &String) -> String {
+    let path = get_db_path(db_name);
+    format!("{}/.{}", path, table_name)
+}
+fn get_table_path(db_name: &String, table_name: &String) -> String {
     let path = get_db_path(db_name);
     format!("{}/{}", path, table_name)
 }
 
-fn get_db_path(db_name: String) -> String {
+fn get_db_path(db_name: &String) -> String {
     format!("./data/{}", db_name)
 }
 

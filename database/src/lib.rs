@@ -3,6 +3,9 @@ use create::create;
 use delete::delete;
 use lexer::{scan_tokens, Token, TokenType};
 
+#[cfg(test)]
+mod tests;
+
 mod create;
 mod delete;
 mod commands;
