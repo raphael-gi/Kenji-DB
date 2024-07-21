@@ -41,19 +41,22 @@ pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
                 continue;
             }
 
-            if char.is_ascii_alphabetic() {
-                if let Ok((token, identifier_token)) = scan_word(&mut characters, vec![char]) {
+            if !char.is_ascii_alphabetic() {
+                continue;
+            }
+
+            match scan_word(&mut characters, vec![char]) {
+                Ok((token, identifier_token)) => {
                     result.push(token);
                     if let Some(token) = identifier_token {
                         result.push(token);
                     }
-                } else {
-                    break;
-                }
+                    continue;
+                },
+                Err(..) => break
             }
-        } else {
-            break;
         }
+        break;
     }
 
     result
