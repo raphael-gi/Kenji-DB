@@ -18,6 +18,6 @@ fn test_table() {
     };
 
     let content = table.get_row_string();
-    assert_eq!(content, String::from("name,STR;age,INT"));
+    assert_eq!(content.as_bytes(), String::from("name,STR;age,NT").as_bytes());
 }
 

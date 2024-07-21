@@ -1,6 +1,5 @@
 use std::{collections::HashMap, vec::IntoIter};
 
-
 #[cfg(test)]
 mod tests;
 
@@ -37,10 +36,13 @@ pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
             }
 
             if char.is_ascii_alphabetic() {
-                let (token, identifier_token) = scan_word(&mut characters, vec![char]);
-                result.push(token);
-                if let Some(token) = identifier_token {
+                if let Ok((token, identifier_token)) = scan_word(&mut characters, vec![char]) {
                     result.push(token);
+                    if let Some(token) = identifier_token {
+                        result.push(token);
+                    }
+                } else {
+                    break;
                 }
             }
         } else {
@@ -51,7 +53,7 @@ pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
     result
 }
 
-fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> (Token, Option<Token>) {
+fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token, Option<Token>), ()> {
     let mut keywords: HashMap<String, TokenType> = HashMap::new();
     keywords.insert(String::from("CREATE"), TokenType::CREATE);
     keywords.insert(String::from("DELETE"), TokenType::DELETE);
@@ -61,25 +63,30 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> (Token, Option
     keywords.insert(String::from("STR"), TokenType::STR);
     keywords.insert(String::from("INT"), TokenType::INT);
 
-    let key = String::from_utf8(word.clone()).unwrap();
+    let key = match String::from_utf8(word.clone()) {
+        Ok(key) => key,
+        Err(..) => {
+            return Err(());
+        }
+    };
 
     let current_char = match characters.next() {
         Some(current_char) => current_char,
         None => {
             if keywords.contains_key(&key) {
-                return (
+                return Ok((
                     Token {
                         value: None,
                         token_type: keywords.get(&key).copied().unwrap()
                     }, None
-                )
+                ))
             } 
-            return (
+            return Ok((
                 Token {
                     value: Some(key),
                     token_type: TokenType::IDENTIFIER
                 }, None
-            );
+            ));
         }
     };
 
@@ -90,19 +97,19 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> (Token, Option
         };
 
         if keywords.contains_key(&key) {
-            return (
+            return Ok((
                 Token {
                     value: None,
                     token_type: keywords.get(&key).copied().unwrap()
                 }, identifier_token
-            )
+            ));
         } 
-        return (
+        return Ok((
             Token {
                 value: Some(key),
                 token_type: TokenType::IDENTIFIER
             }, identifier_token
-        );
+        ));
     }
 
     word.push(current_char);

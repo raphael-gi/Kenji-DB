@@ -16,20 +16,19 @@ impl Table {
         self.rows.iter().map(|table| {
             format!("{},{}", table.name, table.data_type)
         }).collect::<Vec<String>>().join(";")
-        // }).collect::<String>()
     }
 }
 
 pub fn create_database(name: String) {
     match create_dir(get_db_path(&name)) {
-        Ok(..) => println!("Created database"),
+        Ok(..) => println!("Created database: {}", name),
         Err(..) => println!("Failed to create database")
     };
 }
 
 pub fn delete_database(name: String) {
     match remove_dir_all(get_db_path(&name)) {
-        Ok(..) => println!("Deleted database"),
+        Ok(..) => println!("Deleted database: {}", name),
         Err(..) => println!("Failed to delete database")
     }
 }
@@ -38,15 +37,14 @@ pub fn create_table(table: Table) {
     let path = get_table_path(&table.database, &table.name);
     let config_path = get_table_config_path(&table.database, &table.name);
 
-    match File::create(path) {
-        Ok(..) => println!("Created table"),
-        Err(..) => println!("Failed to create table")
-    };
+    if File::create(path).is_err() {
+        return println!("Failed to create table");
+    }
     match File::create(config_path) {
         Ok(mut config_file) => {
             let content = table.get_row_string();
-            println!("{}", content);
             config_file.write(content.as_bytes()).unwrap();
+            println!("Created table: {}", table.name);
         },
         Err(..) => println!("Failed to create table")
     };
@@ -61,7 +59,7 @@ pub fn delete_table(name: String, database: &String) {
         return println!("Failed to delete database");
     }
 
-    println!("Deleted table");
+    println!("Deleted table: {}", name);
 }
 
 fn get_table_config_path(db_name: &String, table_name: &String) -> String {

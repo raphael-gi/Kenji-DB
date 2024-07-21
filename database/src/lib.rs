@@ -48,7 +48,8 @@ fn set_database(tokens: &mut IntoIter<Token>, prev_db: &mut Option<String>) {
     };
 
     if should_execute(tokens.next()) {
-        *prev_db = Some(database_name);
+        *prev_db = Some(database_name.clone());
+        println!("Using: {}", database_name);
     }
 }
 
