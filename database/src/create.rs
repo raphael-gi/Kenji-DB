@@ -1,7 +1,7 @@
 use std::vec::IntoIter;
 use lexer::{Token,TokenType};
 
-use crate::{commands::{self, Table, TableColumn}, get_name, should_execute};
+use crate::{commands::{self, Table, TableColumn}, errors::no_db, get_name, should_execute};
 
 pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) {
     match tokens.next() {
@@ -10,7 +10,7 @@ pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) {
                 TokenType::DATABASE => create_database(tokens),
                 TokenType::TABLE => match database {
                     Some(database) => create_table(tokens, database),
-                    None => println!("Not using a database")
+                    None => no_db()
                 },
                 _ => {},
             }

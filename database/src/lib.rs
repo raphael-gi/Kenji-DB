@@ -1,6 +1,7 @@
 use std::{io::Read, net::{SocketAddrV4, TcpListener}, thread, vec::IntoIter};
 use create::create;
 use delete::delete;
+use insert::insert;
 use lexer::{scan_tokens, Token, TokenType};
 
 #[cfg(test)]
@@ -8,7 +9,9 @@ mod tests;
 
 mod create;
 mod delete;
+mod insert;
 mod commands;
+mod errors;
 
 pub fn spawn_listener(address: SocketAddrV4) {
     let listener = TcpListener::bind(address).unwrap();
@@ -28,6 +31,7 @@ pub fn spawn_listener(address: SocketAddrV4) {
                     Some(token) => match token.token_type {
                         TokenType::CREATE => create(&mut tokens, &using_database),
                         TokenType::DELETE => delete(&mut tokens, &using_database),
+                        TokenType::INSERT => insert(&mut tokens, &using_database),
                         TokenType::USE => set_database(&mut tokens, &mut using_database),
                         _ => break
                     },

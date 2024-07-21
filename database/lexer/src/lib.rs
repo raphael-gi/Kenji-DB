@@ -1,4 +1,4 @@
-use std::{collections::HashMap, vec::IntoIter};
+use std::{collections::HashMap, u8, vec::IntoIter};
 
 #[cfg(test)]
 mod tests;
@@ -12,13 +12,13 @@ pub struct Token {
 #[derive(Clone, Copy, Debug)]
 pub enum TokenType {
     // Single Character
-    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON,
+    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION,
 
     // Literals
     IDENTIFIER, STR, INT,
 
     // Keywords
-    CREATE, DELETE, USE, DATABASE, TABLE
+    CREATE, DELETE, INSERT, USE, DATABASE, TABLE
 }
 
 pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
@@ -30,7 +30,13 @@ pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
             let token_type = scan_token(char);
             if let Ok(token_type) = token_type {
                 if let Some(token_type) = token_type {
-                    result.push(Token { value: None, token_type });
+                    match token_type {
+                        TokenType::QUOTATION => match scan_str(&mut characters) {
+                            Ok(str_token) => result.push(str_token),
+                            Err(..) => break
+                        },
+                        _ => result.push(Token { value: None, token_type })
+                    };
                 }
                 continue;
             }
@@ -57,6 +63,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     let mut keywords: HashMap<String, TokenType> = HashMap::new();
     keywords.insert(String::from("CREATE"), TokenType::CREATE);
     keywords.insert(String::from("DELETE"), TokenType::DELETE);
+    keywords.insert(String::from("INSERT"), TokenType::INSERT);
     keywords.insert(String::from("USE"), TokenType::USE);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
@@ -116,6 +123,30 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     scan_word(characters, word)
 }
 
+fn scan_str(characters: &mut IntoIter<u8>) -> Result<Token, ()> {
+    let mut str: Vec<u8> = Vec::new();
+
+    loop {
+        let char = characters.next();
+        match char {
+            Some(char) => match char {
+                b'"' => break,
+                _ => str.push(char)
+            },
+            None => return Err(())
+        }
+    }
+
+    let value = String::from_utf8(str);
+    match value {
+        Ok(str) => Ok(Token {
+            token_type: TokenType::STR,
+            value: Some(str)
+        }),
+        Err(..) => Err(())
+    }
+}
+
 fn scan_token(character: u8) -> Result<Option<TokenType>, ()> {
     match character {
         b' ' => Ok(None),
@@ -124,6 +155,7 @@ fn scan_token(character: u8) -> Result<Option<TokenType>, ()> {
         b'(' => Ok(Some(TokenType::LEFTBRACE)),
         b')' => Ok(Some(TokenType::RIGHTBRACE)),
         b',' => Ok(Some(TokenType::COMMA)),
+        b'"' => Ok(Some(TokenType::QUOTATION)),
         _ => Err(())
     }
 }

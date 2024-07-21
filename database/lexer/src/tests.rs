@@ -7,3 +7,10 @@ fn scan_tokens_test() {
     println!("{:?}", tokens);
 }
 
+#[test]
+fn scan_str_test() {
+    let input = r#"INSERT users ("John", 45)"#.as_bytes().to_vec();
+    let tokens = scan_tokens(input);
+    println!("{:?}", tokens);
+}
+

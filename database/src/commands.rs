@@ -62,6 +62,10 @@ pub fn delete_table(name: String, database: &String) {
     println!("Deleted table: {}", name);
 }
 
+pub fn insert_table(table: String, database: &String) {
+    let path = get_table_path(database, &table);
+}
+
 fn get_table_config_path(db_name: &String, table_name: &String) -> String {
     let path = get_db_path(db_name);
     format!("{}/.{}", path, table_name)
