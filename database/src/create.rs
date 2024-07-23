@@ -3,7 +3,7 @@ use lexer::{Token,TokenType};
 
 use crate::{commands::{self, Table, TableColumn}, errors::no_db, get_name, should_execute};
 
-pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) {
+pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match tokens.next() {
         Some(token) => {
             match token.token_type {
@@ -15,8 +15,10 @@ pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) {
                 _ => {},
             }
         },
-        None => println!("Nothing to create provided")
+        None => return Some("Nothing to create provided".to_string())
     }
+
+    None
 }
 
 fn create_database(tokens: &mut IntoIter<Token>) {

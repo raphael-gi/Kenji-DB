@@ -1,4 +1,4 @@
-use std::{fs::{create_dir, remove_dir_all, remove_file, File}, io::Write};
+use std::{fs::{create_dir, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8};
 
 pub struct TableColumn {
     pub name: String,
@@ -18,6 +18,7 @@ impl Table {
         }).collect::<Vec<String>>().join(";")
     }
 }
+
 
 pub fn create_database(name: String) {
     match create_dir(get_db_path(&name)) {
@@ -62,9 +63,59 @@ pub fn delete_table(name: String, database: &String) {
     println!("Deleted table: {}", name);
 }
 
-pub fn insert_table(table: String, database: &String) {
-    let path = get_table_path(database, &table);
+pub fn _insert_table(table: String, database: &String) {
+    let _path = get_table_path(database, &table);
 }
+
+pub fn list_databases() {
+    if let Ok(files) = read_dir("./data") {
+        let mut max_len = 0;
+
+        let mut file_names = files.map(|file| {
+            if let Ok(f) = file {
+                let filename = f.file_name();
+                if max_len < filename.len() {
+                    max_len = filename.len();
+                }
+                if let Some(name) = filename.to_str() {
+                    return String::from(name);
+                }
+            }
+
+            String::from("| Couldn't read db name |")
+        }).collect::<Vec<String>>();
+
+        for name in &mut file_names {
+            let whitespace_amount: usize = max_len - name.len();
+            let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
+            name.push_str(&String::from_utf8(whitespaces).unwrap());
+            name.push(' ');
+            name.push('|');
+            name.insert_str(0, "| ");
+        }
+
+        println!("{}", file_names.join("\n"));
+    }
+}
+
+pub fn list_tables(database: &String) {
+    if let Ok(files) = read_dir(get_db_path(database)) {
+        let file_names = files.map(|file| {
+            match file {
+                Ok(f) => format!("| {:?}      |", f.file_name()),
+                Err(..) => String::from("| Couldn't read table name |")
+            }
+        }).collect::<Vec<String>>().join("\n");
+
+        println!("{}", file_names);
+    }
+}
+
+pub fn database_exists(database: &String) -> bool {
+    let path = get_db_path(database);
+    Path::new(&path).exists()
+}
+
 
 fn get_table_config_path(db_name: &String, table_name: &String) -> String {
     let path = get_db_path(db_name);

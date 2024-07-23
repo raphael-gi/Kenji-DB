@@ -18,7 +18,8 @@ pub enum TokenType {
     IDENTIFIER, STR, INT,
 
     // Keywords
-    CREATE, DELETE, INSERT, USE, DATABASE, TABLE
+    CREATE, DELETE, INSERT, USE, LIST,
+    DATABASE, DATABASES, TABLE, TABLES,
 }
 
 pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
@@ -68,8 +69,11 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("DELETE"), TokenType::DELETE);
     keywords.insert(String::from("INSERT"), TokenType::INSERT);
     keywords.insert(String::from("USE"), TokenType::USE);
+    keywords.insert(String::from("LIST"), TokenType::LIST);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
+    keywords.insert(String::from("DATABASES"), TokenType::DATABASES);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
+    keywords.insert(String::from("TABLES"), TokenType::TABLES);
     keywords.insert(String::from("STR"), TokenType::STR);
     keywords.insert(String::from("INT"), TokenType::INT);
 
