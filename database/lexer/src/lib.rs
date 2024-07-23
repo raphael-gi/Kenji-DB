@@ -18,7 +18,7 @@ pub enum TokenType {
     IDENTIFIER, STR, INT,
 
     // Keywords
-    CREATE, DELETE, INSERT, USE, LIST,
+    CREATE, DELETE, INSERT, USE, SHOW,
     DATABASE, DATABASES, TABLE, TABLES,
 }
 
@@ -69,7 +69,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("DELETE"), TokenType::DELETE);
     keywords.insert(String::from("INSERT"), TokenType::INSERT);
     keywords.insert(String::from("USE"), TokenType::USE);
-    keywords.insert(String::from("LIST"), TokenType::LIST);
+    keywords.insert(String::from("SHOW"), TokenType::SHOW);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
     keywords.insert(String::from("DATABASES"), TokenType::DATABASES);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
@@ -83,15 +83,16 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
             return Err(());
         }
     };
+    let uppercase_key = key.to_uppercase();
 
     let current_char = match characters.next() {
         Some(current_char) => current_char,
         None => {
-            if keywords.contains_key(&key) {
+            if keywords.contains_key(&uppercase_key) {
                 return Ok((
                     Token {
                         value: None,
-                        token_type: keywords.get(&key).copied().unwrap()
+                        token_type: keywords.get(&uppercase_key).copied().unwrap()
                     }, None
                 ))
             } 
@@ -110,11 +111,11 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
             None => None
         };
 
-        if keywords.contains_key(&key) {
+        if keywords.contains_key(&uppercase_key) {
             return Ok((
                 Token {
                     value: None,
-                    token_type: keywords.get(&key).copied().unwrap()
+                    token_type: keywords.get(&uppercase_key).copied().unwrap()
                 }, identifier_token
             ));
         } 

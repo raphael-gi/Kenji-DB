@@ -2,9 +2,10 @@ use std::{io::{Read, Write}, net::{SocketAddrV4, TcpListener}, thread, vec::Into
 use commands::database_exists;
 use create::create;
 use delete::delete;
+use errors::{err,err_semicolon};
 use insert::insert;
 use lexer::{scan_tokens, Token, TokenType};
-use list::list;
+use show::show;
 
 #[cfg(test)]
 mod tests;
@@ -12,7 +13,7 @@ mod tests;
 mod create;
 mod delete;
 mod insert;
-mod list;
+mod show;
 mod commands;
 mod errors;
 
@@ -38,7 +39,7 @@ pub fn spawn_listener(address: SocketAddrV4) {
                         TokenType::CREATE => create(&mut tokens, &using_database),
                         TokenType::DELETE => delete(&mut tokens, &using_database),
                         TokenType::INSERT => insert(&mut tokens, &using_database),
-                        TokenType::LIST => list(&mut tokens, &mut using_database),
+                        TokenType::SHOW => show(&mut tokens, &mut using_database),
                         TokenType::USE => set_database(&mut tokens, &mut using_database),
                         _ => break
                     },
@@ -73,7 +74,7 @@ fn set_database(tokens: &mut IntoIter<Token>, prev_db: &mut Option<String>) -> O
         return Some(format!("Using: {}", database_name));
     }
 
-    err("Missing ';'")
+    err_semicolon()
 }
 
 fn should_execute(token: Option<Token>) -> bool {
@@ -86,19 +87,15 @@ fn should_execute(token: Option<Token>) -> bool {
     }
 }
 
-fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, ()> {
+fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, String> {
     let token = match tokens.next() {
         Some(token) => token,
-        None => return Err(())
+        None => return Err(String::from("No name provided"))
     };
 
     match token.token_type {
         TokenType::IDENTIFIER => Ok(token.value.unwrap()),
-        _ => Err(())
+        _ => Err(String::from("Provided name isn't valid"))
     }
-}
-
-fn err(error: &str) -> Option<String> {
-    Some(String::from(error))
 }
 

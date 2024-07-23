@@ -1,4 +1,4 @@
-use std::{fs::{create_dir, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8};
+use std::{fs::{create_dir, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8, vec};
 
 pub struct TableColumn {
     pub name: String,
@@ -67,17 +67,17 @@ pub fn _insert_table(table: String, database: &String) {
     let _path = get_table_path(database, &table);
 }
 
-pub fn list_databases() {
+pub fn show_databases() {
     if let Ok(files) = read_dir("./data") {
-        let mut max_len = 0;
+        let mut max_len = 9;
 
         let mut file_names = files.map(|file| {
             if let Ok(f) = file {
                 let filename = f.file_name();
-                if max_len < filename.len() {
-                    max_len = filename.len();
-                }
                 if let Some(name) = filename.to_str() {
+                    if max_len < name.len() {
+                        max_len = name.len();
+                    }
                     return String::from(name);
                 }
             }
@@ -85,29 +85,40 @@ pub fn list_databases() {
             String::from("| Couldn't read db name |")
         }).collect::<Vec<String>>();
 
-        for name in &mut file_names {
-            let whitespace_amount: usize = max_len - name.len();
-            let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
-            name.push_str(&String::from_utf8(whitespaces).unwrap());
-            name.push(' ');
-            name.push('|');
-            name.insert_str(0, "| ");
-        }
+        file_names.insert(0 ,String::from("Databases"));
+        decorate_listing(&mut file_names, max_len);
 
         println!("{}", file_names.join("\n"));
     }
 }
 
-pub fn list_tables(database: &String) {
+pub fn show_tables(database: &String) {
     if let Ok(files) = read_dir(get_db_path(database)) {
-        let file_names = files.map(|file| {
-            match file {
-                Ok(f) => format!("| {:?}      |", f.file_name()),
-                Err(..) => String::from("| Couldn't read table name |")
-            }
-        }).collect::<Vec<String>>().join("\n");
+        let mut max_len = 6;
 
-        println!("{}", file_names);
+        let mut file_names: Vec<String> = Vec::new();
+        for file in files {
+            if let Ok(f) = file {
+                let filename = f.file_name();
+                if let Some(name) = filename.to_str() {
+                    if name.starts_with(".") {
+                        continue;
+                    }
+                    if max_len < name.len() {
+                        max_len = name.len();
+                    }
+                    file_names.push(String::from(name));
+                    continue;
+                }
+            }
+
+            file_names.push(String::from("Couldn't read table name"));
+        }
+
+        file_names.insert(0 ,String::from("Tables"));
+        decorate_listing(&mut file_names, max_len);
+
+        println!("{}", file_names.join("\n"));
     }
 }
 
@@ -116,6 +127,25 @@ pub fn database_exists(database: &String) -> bool {
     Path::new(&path).exists()
 }
 
+fn decorate_listing(list: &mut Vec<String>, max_len: usize) {
+    for name in &mut *list {
+        let whitespace_amount: usize = max_len - name.len();
+        let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
+        name.push_str(&String::from_utf8(whitespaces).unwrap());
+        name.push(' ');
+        name.push('|');
+        name.insert_str(0, "| ");
+    }
+
+    let mut seperator_lign = vec![b'-';max_len + 2];
+    seperator_lign.insert(0, b'+');
+    seperator_lign.push(b'+');
+    let seperator = String::from_utf8(seperator_lign).unwrap();
+
+    list.insert(0, seperator.clone());
+    list.insert(2, seperator.clone());
+    list.push(seperator);
+}
 
 fn get_table_config_path(db_name: &String, table_name: &String) -> String {
     let path = get_db_path(db_name);

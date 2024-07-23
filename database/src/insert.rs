@@ -17,7 +17,7 @@ pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option
                 }
             }
         },
-        None => no_db()
+        None => return no_db()
     }
 
     None
