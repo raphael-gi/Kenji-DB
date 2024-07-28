@@ -22,6 +22,16 @@ pub enum TokenType {
     DATABASE, DATABASES, TABLE, TABLES,
 }
 
+impl TokenType {
+    pub fn get_type_from_str(input: &str) -> Option<TokenType> {
+        match input {
+            "STR" => Some(TokenType::STR),
+            "INT" => Some(TokenType::INT),
+            _ => None
+        }
+    }
+}
+
 pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
     let mut characters = characters.into_iter();
     let mut result: Vec<Token> = Vec::new();

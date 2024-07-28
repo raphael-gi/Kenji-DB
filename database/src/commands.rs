@@ -1,5 +1,7 @@
 use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8, vec};
 
+use lexer::TokenType;
+
 pub struct TableColumn {
     pub name: String,
     pub data_type: String
@@ -128,11 +130,10 @@ pub fn desc_table(table_name: String, database: &String) {
     match content {
         Ok(content) => match String::from_utf8(content) {
             Ok(content) => {
-                // | Field | Type |
                 let mut max_lengths: [usize;2] = [5,4];
 
                 let columns = content.split(";");
-                let mut rows: Vec<[&str;2]> = columns.map(|column| {
+                let mut rows: Vec<[String;2]> = columns.map(|column| {
                     let mut rows = column.split(",");
                     let field = rows.next().expect("Field name doesn't exists");
                     if field.len() > max_lengths[0] {
@@ -143,12 +144,31 @@ pub fn desc_table(table_name: String, database: &String) {
                         max_lengths[1] = data_type.len();
                     }
 
-                    return [field, data_type];
+                    return [String::from(field), String::from(data_type)];
                 }).collect();
 
-                rows.insert(0, ["Field", "Type"]);
+                rows.insert(0, [String::from("Field"), String::from("Type")]);
 
-                println!("{:?}", rows);
+                decorate_table(&mut rows, max_lengths);
+
+                let mut seperated_rows = rows.iter().map(|row| {
+                    let mut res = row.join(" | ");
+                    res.insert_str(0, "| ");
+                    res.push_str(" |");
+                    res
+                }).collect::<Vec<String>>();
+
+                let mut seperators = max_lengths.iter().map(|max_len| {
+                    String::from_utf8(vec![b'-';max_len + 2]).unwrap()
+                }).collect::<Vec<String>>().join("+");
+                seperators.insert(0, '+');
+                seperators.push('+');
+
+                seperated_rows.insert(0, seperators.clone());
+                seperated_rows.insert(2, seperators.clone());
+                seperated_rows.push(seperators);
+
+                println!("{}", seperated_rows.join("\n"));
             },
             Err(err) => println!("{}", err)
         },
@@ -159,6 +179,32 @@ pub fn desc_table(table_name: String, database: &String) {
 pub fn database_exists(database: &String) -> bool {
     let path = get_db_path(database);
     Path::new(&path).exists()
+}
+pub fn table_exists(database: &String, table_name: &String) -> bool {
+    let path = get_table_config_path(database, table_name);
+    Path::new(&path).exists()
+}
+
+pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<TokenType> {
+    let config_path = get_table_config_path(database, table_name);
+    let content = read(config_path).expect("Table config file not found");
+    let columns = String::from_utf8(content).expect("Non utf8 characters as columns");
+    columns.split(";").map(|column| {
+        let mut rows = column.split(",");
+        let _ = rows.next();
+        let data_type = rows.next().expect("No datatype found");
+        TokenType::get_type_from_str(data_type).expect("Incorrect datatype")
+    }).collect()
+}
+
+fn decorate_table(list: &mut Vec<[String; 2]>, max_lengths: [usize; 2])  {
+    for row in list {
+        for (i, cell) in row.into_iter().enumerate() {
+            let whitespace_amount: usize = max_lengths[i] - cell.len();
+            let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
+            cell.push_str(&String::from_utf8(whitespaces).unwrap());
+        }
+    }
 }
 
 fn decorate_listing(list: &mut Vec<String>, max_len: usize) {

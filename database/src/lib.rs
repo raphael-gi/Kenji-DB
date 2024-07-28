@@ -22,7 +22,7 @@ mod errors;
 pub fn spawn_listener(address: SocketAddrV4) {
     let listener = TcpListener::bind(address).unwrap();
 
-    let mut using_database: Option<String> = None;
+    let mut using_database: Option<String> = Some(String::from("store"));
 
     thread::spawn(move || {
         for stream in listener.incoming() {
