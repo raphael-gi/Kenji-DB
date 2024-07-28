@@ -39,7 +39,8 @@ fn delete_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<Strin
     };
 
     if should_execute(tokens.next()) {
-        commands::delete_table(table_name, database)
+        commands::delete_table(table_name, database);
+        return None;
     }
 
     err_semicolon()

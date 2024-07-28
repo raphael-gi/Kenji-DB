@@ -2,6 +2,7 @@ use std::{io::{Read, Write}, net::{SocketAddrV4, TcpListener}, thread, vec::Into
 use commands::database_exists;
 use create::create;
 use delete::delete;
+use desc::desc;
 use errors::{err,err_semicolon};
 use insert::insert;
 use lexer::{scan_tokens, Token, TokenType};
@@ -14,6 +15,7 @@ mod create;
 mod delete;
 mod insert;
 mod show;
+mod desc;
 mod commands;
 mod errors;
 
@@ -40,6 +42,7 @@ pub fn spawn_listener(address: SocketAddrV4) {
                         TokenType::DELETE => delete(&mut tokens, &using_database),
                         TokenType::INSERT => insert(&mut tokens, &using_database),
                         TokenType::SHOW => show(&mut tokens, &mut using_database),
+                        TokenType::DESC => desc(&mut tokens, &mut using_database),
                         TokenType::USE => set_database(&mut tokens, &mut using_database),
                         _ => break
                     },

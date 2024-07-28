@@ -1,4 +1,4 @@
-use std::{fs::{create_dir, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8, vec};
+use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8, vec};
 
 pub struct TableColumn {
     pub name: String,
@@ -103,7 +103,7 @@ pub fn show_tables(database: &String) {
                 if let Some(name) = filename.to_str() {
                     if name.starts_with(".") {
                         continue;
-                    }
+                   }
                     if max_len < name.len() {
                         max_len = name.len();
                     }
@@ -119,6 +119,40 @@ pub fn show_tables(database: &String) {
         decorate_listing(&mut file_names, max_len);
 
         println!("{}", file_names.join("\n"));
+    }
+}
+
+pub fn desc_table(table_name: String, database: &String) {
+    let path = get_table_config_path(database, &table_name);
+    let content = read(path);
+    match content {
+        Ok(content) => match String::from_utf8(content) {
+            Ok(content) => {
+                // | Field | Type |
+                let mut max_lengths: [usize;2] = [5,4];
+
+                let columns = content.split(";");
+                let mut rows: Vec<[&str;2]> = columns.map(|column| {
+                    let mut rows = column.split(",");
+                    let field = rows.next().expect("Field name doesn't exists");
+                    if field.len() > max_lengths[0] {
+                        max_lengths[0] = field.len();
+                    }
+                    let data_type = rows.next().expect("Data Type doesn't exists");
+                    if data_type.len() > max_lengths[1] {
+                        max_lengths[1] = data_type.len();
+                    }
+
+                    return [field, data_type];
+                }).collect();
+
+                rows.insert(0, ["Field", "Type"]);
+
+                println!("{:?}", rows);
+            },
+            Err(err) => println!("{}", err)
+        },
+        Err(err) => println!("{}", err)
     }
 }
 

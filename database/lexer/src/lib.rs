@@ -18,7 +18,7 @@ pub enum TokenType {
     IDENTIFIER, STR, INT,
 
     // Keywords
-    CREATE, DELETE, INSERT, USE, SHOW,
+    CREATE, DELETE, INSERT, USE, SHOW, DESC,
     DATABASE, DATABASES, TABLE, TABLES,
 }
 
@@ -70,6 +70,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("INSERT"), TokenType::INSERT);
     keywords.insert(String::from("USE"), TokenType::USE);
     keywords.insert(String::from("SHOW"), TokenType::SHOW);
+    keywords.insert(String::from("DESC"), TokenType::DESC);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
     keywords.insert(String::from("DATABASES"), TokenType::DATABASES);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
