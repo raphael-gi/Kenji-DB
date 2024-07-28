@@ -14,3 +14,10 @@ fn scan_str_test() {
     println!("{:?}", tokens);
 }
 
+#[test]
+fn scan_number_test() {
+    let input = "1233-3,;".as_bytes().to_vec();
+    let tokens = scan_tokens(input);
+    println!("{:?}", tokens);
+}
+

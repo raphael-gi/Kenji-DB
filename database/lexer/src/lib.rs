@@ -12,7 +12,7 @@ pub struct Token {
 #[derive(Clone, Copy, Debug)]
 pub enum TokenType {
     // Single Character
-    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION,
+    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION, MINUS,
 
     // Literals
     IDENTIFIER, STR, INT,
@@ -46,31 +46,80 @@ pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {
                             Ok(str_token) => result.push(str_token),
                             Err(..) => break
                         },
+                        TokenType::MINUS => match scan_number(&mut characters, vec![b'-']) {
+                            Ok((digit_token, last_token)) => {
+                                result.push(digit_token);
+                                if let Some(last_token) = last_token {
+                                    result.push(last_token);
+                                }
+                            },
+                            Err(..) => break
+                        },
                         _ => result.push(Token { value: None, token_type })
                     };
                 }
                 continue;
             }
 
-            if !char.is_ascii_alphabetic() {
+            if char.is_ascii_digit() {
+                match scan_number(&mut characters, vec![char]) {
+                    Ok((digit_token, last_token)) => {
+                        result.push(digit_token);
+                        if let Some(last_token) = last_token {
+                            result.push(last_token);
+                        }
+                    },
+                    Err(..) => break
+                }
                 continue;
             }
 
-            match scan_word(&mut characters, vec![char]) {
-                Ok((token, identifier_token)) => {
-                    result.push(token);
-                    if let Some(token) = identifier_token {
+            if char.is_ascii_alphabetic() {
+                match scan_word(&mut characters, vec![char]) {
+                    Ok((token, identifier_token)) => {
                         result.push(token);
-                    }
-                    continue;
-                },
-                Err(..) => break
+                        if let Some(token) = identifier_token {
+                            result.push(token);
+                        }
+                    },
+                    Err(..) => break
+                }
+                continue;
             }
         }
         break;
     }
 
     result
+}
+
+fn scan_number(characters: &mut IntoIter<u8>, mut digits: Vec<u8>) -> Result<(Token, Option<Token>), ()> {
+    let char = characters.next();
+
+    match char {
+        Some(char) => {
+            if !char.is_ascii_digit() {
+                let second_token = match scan_token(char) {
+                    Ok(token_type) => match token_type {
+                        Some(token_type) => Some(Token {
+                            value: None,
+                            token_type
+                        }),
+                        None => None
+                    },
+                    Err(..) => None
+                };
+                return Ok((Token {
+                    token_type: TokenType::INT,
+                    value: Some(String::from_utf8(digits).unwrap())
+                }, second_token));
+            }
+
+            digits.push(char);
+            scan_number(characters, digits)
+        },
+        None => Err(())
+    }
 }
 
 fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token, Option<Token>), ()> {
@@ -170,6 +219,7 @@ fn scan_token(character: u8) -> Result<Option<TokenType>, ()> {
     match character {
         b' ' => Ok(None),
         b'\n' => Ok(None),
+        b'-' => Ok(Some(TokenType::MINUS)),
         b';' => Ok(Some(TokenType::SEMICOLON)),
         b'(' => Ok(Some(TokenType::LEFTBRACE)),
         b')' => Ok(Some(TokenType::RIGHTBRACE)),

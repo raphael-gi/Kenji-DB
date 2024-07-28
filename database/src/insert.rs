@@ -1,7 +1,7 @@
 use std::vec::IntoIter;
 use lexer::{Token, TokenType};
 
-use crate::{commands::{get_table_column_types, table_exists}, errors::{err, no_db}};
+use crate::{commands::{get_table_column_types, table_exists}, errors::{err, err_abrupt_ending, no_db}};
 
 pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match database {
@@ -25,10 +25,24 @@ pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option
 
                             let insert_values = get_insert_values(tokens);
 
-                            println!("{:?}", columns);
-                            println!("{:?}", insert_values);
+                            match insert_values {
+                                Ok(values) => {
+                                    if columns.len() != values.len() {
+                                        return Some(format!("Incorrect amount of parameters provided\nExpected: {} but found {}", columns.len(), values.len()));
+                                    }
+                                    for (i, token) in values.iter().enumerate() {
+                                        let token_type = token.token_type;
+                                        if matches!(columns[i], token_type) {
 
-                            None
+                                        }
+                                    }
+                                    println!("{:?}", columns);
+                                    println!("{:?}", values);
+
+                                    None
+                                },
+                                Err(err) => err
+                            }
                         },
                         None => err("Expected '(' but nothing provided")
                     }
@@ -40,19 +54,25 @@ pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option
     }
 }
 
-fn get_insert_values(tokens: &mut IntoIter<Token>) -> Result<Vec<Token>, ()> {
+fn get_insert_values(tokens: &mut IntoIter<Token>) -> Result<Vec<Token>, Option<String>> {
     let mut insert_values: Vec<Token> = Vec::new();
     loop {
         match tokens.next() {
             Some(token) => match token.token_type {
-                TokenType::RIGHTBRACE => return Ok(insert_values),
-                TokenType::COMMA => continue,
                 TokenType::STR => insert_values.push(token),
                 TokenType::INT => insert_values.push(token),
-                _ => return Err(())
+                _ => return Err(err("Couldn't identify inserted value"))
             }
-            None => return Err(())
+            None => return Err(err_abrupt_ending())
         };
+        match tokens.next() {
+            Some(token) => match token.token_type {
+                TokenType::RIGHTBRACE => return Ok(insert_values),
+                TokenType::COMMA => continue,
+                _ => return Err(err("You must seperate your values with a ','"))
+            },
+            None => return Err(err_abrupt_ending())
+        }
     }
 }
 
