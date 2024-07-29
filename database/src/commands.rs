@@ -70,7 +70,7 @@ pub fn insert_table(table: &String, database: &String, _columns: Vec<String>) {
     let _path = get_table_path(database, &table);
 }
 
-pub fn show_databases() {
+pub fn show_databases(database: &Option<String>) {
     if let Ok(files) = read_dir("./data") {
         let mut max_len = 9;
 
@@ -78,10 +78,16 @@ pub fn show_databases() {
             if let Ok(f) = file {
                 let filename = f.file_name();
                 if let Some(name) = filename.to_str() {
+                    let mut name = String::from(name);
+                    if let Some(database) = database {
+                        if database == &name {
+                            name.insert(0, '*');
+                        }
+                    }
                     if max_len < name.len() {
                         max_len = name.len();
                     }
-                    return String::from(name);
+                    return name;
                 }
             }
 
