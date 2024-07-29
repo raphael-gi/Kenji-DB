@@ -3,6 +3,7 @@ use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File}, i
 use lexer::TokenType;
 
 pub struct TableColumn {
+    pub pk: bool,
     pub name: String,
     pub data_type: String
 }
@@ -65,7 +66,7 @@ pub fn delete_table(name: String, database: &String) {
     println!("Deleted table: {}", name);
 }
 
-pub fn _insert_table(table: String, database: &String) {
+pub fn insert_table(table: &String, database: &String, _columns: Vec<String>) {
     let _path = get_table_path(database, &table);
 }
 

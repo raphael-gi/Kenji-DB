@@ -1,6 +1,6 @@
 
-pub fn err(error: &str) -> Option<String> {
-    Some(String::from(error))
+pub fn err<S: Into<String>>(error: S) -> Option<String> {
+    Some(error.into())
 }
 
 pub fn no_db() -> Option<String> {

@@ -1,7 +1,7 @@
 use std::vec::IntoIter;
 use lexer::{Token, TokenType};
 
-use crate::{commands::{get_table_column_types, table_exists}, errors::{err, err_abrupt_ending, no_db}};
+use crate::{commands::{get_table_column_types, insert_table, table_exists}, errors::{err, err_abrupt_ending, no_db}};
 
 pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match database {
@@ -15,42 +15,55 @@ pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option
                     if !table_exists(database, table_name) {
                         return err("Table not found");
                     }
-                    let columns = get_table_column_types(table_name, database);
 
-                    match tokens.next() {
-                        Some(brace_tocken) => {
-                            if !matches!(brace_tocken.token_type, TokenType::LEFTBRACE) {
-                                return err("Expected '(' but nothing provided");
-                            }
-
-                            let insert_values = get_insert_values(tokens);
-
-                            match insert_values {
-                                Ok(values) => {
-                                    if columns.len() != values.len() {
-                                        return Some(format!("Incorrect amount of parameters provided\nExpected: {} but found {}", columns.len(), values.len()));
-                                    }
-                                    for (i, token) in values.iter().enumerate() {
-                                        let token_type = token.token_type;
-                                        if matches!(columns[i], token_type) {
-
-                                        }
-                                    }
-                                    println!("{:?}", columns);
-                                    println!("{:?}", values);
-
-                                    None
-                                },
-                                Err(err) => err
-                            }
-                        },
-                        None => err("Expected '(' but nothing provided")
-                    }
+                    handle_columns(tokens, table_name, database)
                 },
                 None => err("Invalid table name provided")
             }
         },
         None => no_db()
+    }
+}
+
+fn handle_columns(tokens: &mut IntoIter<Token>, table_name: &String, database: &String) -> Option<String> {
+    let columns = get_table_column_types(table_name, database);
+
+    match tokens.next() {
+        Some(brace_tocken) => {
+            if !matches!(brace_tocken.token_type, TokenType::LEFTBRACE) {
+                return err("Expected '(' but nothing provided");
+            }
+
+            let insert_values = get_insert_values(tokens);
+
+            match insert_values {
+                Ok(values) => {
+                    if columns.len() != values.len() {
+                        return err(format!(
+                                "Incorrect amount of parameters provided\nExpected: {} but found {}",
+                                columns.len(), values.len()
+                        ));
+                    }
+                    for (i, token) in values.iter().enumerate() {
+                        let token_type = token.token_type;
+                        if !TokenType::is_same_datatype(columns[i], token_type) {
+                            return err(format!(
+                                    "Incorrect data type for column {}\nExpected {} but found {}",
+                                    i + 1, columns[i].to_string(), token_type.to_string()
+                            ));
+                        }
+                    }
+
+                    let columns = values.into_iter().map(|token| { token.value.unwrap() }).collect();
+
+                    insert_table(table_name, database, columns);
+
+                    None
+                },
+                Err(err) => err
+            }
+        },
+        None => err("Expected '(' but nothing provided")
     }
 }
 

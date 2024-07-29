@@ -15,7 +15,7 @@ pub enum TokenType {
     LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION, MINUS,
 
     // Literals
-    IDENTIFIER, STR, INT,
+    IDENTIFIER, STR, INT, PK,
 
     // Keywords
     CREATE, DELETE, INSERT, USE, SHOW, DESC,
@@ -23,11 +23,25 @@ pub enum TokenType {
 }
 
 impl TokenType {
+    pub fn is_same_datatype(first: TokenType, second: TokenType) -> bool {
+        match (first, second) {
+            (Self::STR, Self::STR) => true,
+            (Self::INT, Self::INT) => true,
+            _ => false
+        }
+    }
     pub fn get_type_from_str(input: &str) -> Option<TokenType> {
         match input {
             "STR" => Some(TokenType::STR),
             "INT" => Some(TokenType::INT),
             _ => None
+        }
+    }
+    pub fn to_string(&self) -> String {
+        match self {
+            &Self::STR => String::from("STRING"),
+            &Self::INT => String::from("INTEGER"),
+            _ => String::new()
         }
     }
 }
@@ -129,13 +143,19 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("INSERT"), TokenType::INSERT);
     keywords.insert(String::from("USE"), TokenType::USE);
     keywords.insert(String::from("SHOW"), TokenType::SHOW);
+    keywords.insert(String::from("LS"), TokenType::SHOW);
     keywords.insert(String::from("DESC"), TokenType::DESC);
     keywords.insert(String::from("DATABASE"), TokenType::DATABASE);
+    keywords.insert(String::from("DB"), TokenType::DATABASE);
     keywords.insert(String::from("DATABASES"), TokenType::DATABASES);
+    keywords.insert(String::from("DBS"), TokenType::DATABASES);
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
+    keywords.insert(String::from("TB"), TokenType::TABLE);
     keywords.insert(String::from("TABLES"), TokenType::TABLES);
+    keywords.insert(String::from("TBS"), TokenType::TABLES);
     keywords.insert(String::from("STR"), TokenType::STR);
     keywords.insert(String::from("INT"), TokenType::INT);
+    keywords.insert(String::from("PK"), TokenType::PK);
 
     let key = match String::from_utf8(word.clone()) {
         Ok(key) => key,
