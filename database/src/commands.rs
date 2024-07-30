@@ -228,8 +228,6 @@ pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<Tok
 fn decorate_table(list: &mut Vec<[String; 3]>, max_lengths: [usize; 3])  {
     for row in list {
         for (i, cell) in row.into_iter().enumerate() {
-            println!("{}", max_lengths[i]);
-            println!("{}", cell.len());
             let whitespace_amount: usize = max_lengths[i] - cell.len();
             let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
             cell.push_str(&String::from_utf8(whitespaces).unwrap());

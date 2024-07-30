@@ -156,7 +156,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("TABLE"), TokenType::TABLE);
     keywords.insert(String::from("TB"), TokenType::TABLE);
     keywords.insert(String::from("TABLES"), TokenType::TABLES);
-    keywords.insert(String::from("TBS"), TokenType::TABLES);
+    keywords.insert(String::from("TBLS"), TokenType::TABLES);
     keywords.insert(String::from("STR"), TokenType::STR);
     keywords.insert(String::from("INT"), TokenType::INT);
     keywords.insert(String::from("PK"), TokenType::PK);
