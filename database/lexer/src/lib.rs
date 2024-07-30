@@ -15,7 +15,7 @@ pub enum TokenType {
     LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION, MINUS,
 
     // Literals
-    IDENTIFIER, STR, INT, PK,
+    IDENTIFIER, STR, INT, PK, FK,
 
     // Keywords
     CREATE, DELETE, INSERT, USE, SHOW, DESC,
@@ -34,6 +34,8 @@ impl TokenType {
         match input {
             "STR" => Some(TokenType::STR),
             "INT" => Some(TokenType::INT),
+            "PK" => Some(TokenType::PK),
+            "FK" => Some(TokenType::FK),
             _ => None
         }
     }
@@ -41,6 +43,8 @@ impl TokenType {
         match self {
             &Self::STR => String::from("STRING"),
             &Self::INT => String::from("INTEGER"),
+            &Self::PK => String::from("PK"),
+            &Self::FK => String::from("FK"),
             _ => String::new()
         }
     }

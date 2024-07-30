@@ -67,24 +67,25 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
     let mut rows: Vec<TableColumn> = Vec::new();
 
     loop {
-        // first value = pk || identifier
         let first_token = match tokens.next() {
             Some(token) => token,
             None => break
         };
-        let is_pk = match first_token.token_type {
-            TokenType::PK => true,
-            _ => false
+        let key = match first_token.token_type {
+            TokenType::RIGHTBRACE => break,
+            TokenType::PK => Some(TokenType::PK),
+            TokenType::FK => Some(TokenType::FK),
+            _ => None
         };
-        let name = match is_pk {
-            true => match tokens.next() {
+        let name = match key {
+            Some(..) => match tokens.next() {
                 Some(token) => match token.token_type {
                     TokenType::IDENTIFIER => token.value.unwrap(),
                     _ => break
                 },
                 None => break
             },
-            false => first_token.value.unwrap()
+            None => first_token.value.unwrap()
         };
 
         let data_type = match tokens.next() {
@@ -98,7 +99,7 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
 
         match tokens.next() {
             Some(token) => match token.token_type {
-                TokenType::SEMICOLON => rows.push(TableColumn {pk: is_pk, name, data_type }),
+                TokenType::SEMICOLON => rows.push(TableColumn {key, name, data_type }),
                 _ => break
             },
             None => break

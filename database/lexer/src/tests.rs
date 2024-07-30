@@ -21,3 +21,10 @@ fn scan_number_test() {
     println!("{:?}", tokens);
 }
 
+#[test]
+fn create_table_test() {
+    let input = "create table test (PK id INT; name STR;);".as_bytes().to_vec();
+    let tokens = scan_tokens(input);
+    println!("{:?}", tokens);
+}
+

@@ -3,7 +3,7 @@ use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File}, i
 use lexer::TokenType;
 
 pub struct TableColumn {
-    pub pk: bool,
+    pub key: Option<TokenType>,
     pub name: String,
     pub data_type: String
 }
@@ -16,12 +16,15 @@ pub struct Table {
 
 impl Table {
     pub fn get_row_string(&self) -> String {
-        self.rows.iter().map(|table| {
-            format!("{},{}", table.name, table.data_type)
+        self.rows.iter().map(|column| {
+            let key = match column.key {
+                Some(key) => key.to_string(),
+                None => String::new()
+            };
+            format!("{},{},{}", key, column.name, column.data_type)
         }).collect::<Vec<String>>().join(";")
     }
 }
-
 
 pub fn create_database(name: String) {
     match create_dir(get_db_path(&name)) {
@@ -41,6 +44,11 @@ pub fn create_table(table: Table) {
     let path = get_table_path(&table.database, &table.name);
     let config_path = get_table_config_path(&table.database, &table.name);
 
+    if Path::new(&path).exists() {
+        println!("Table already exists");
+        return;
+    }
+
     if File::create(path).is_err() {
         return println!("Failed to create table");
     }
@@ -55,12 +63,17 @@ pub fn create_table(table: Table) {
 }
 
 pub fn delete_table(name: String, database: &String) {
-    if remove_file(get_table_path(database, &name)).is_err() {
-        return println!("Failed to delete database");
+    let path = get_table_path(database, &name);
+    let config_path = get_table_config_path(database, &name);
+    if !Path::new(&path).exists() || !Path::new(&config_path).exists() {
+        return println!("Table doesn't exists");
+    }
+    if remove_file(path).is_err() {
+        return println!("Failed to delete table");
     }
 
-    if remove_file(get_table_config_path(database, &name)).is_err() {
-        return println!("Failed to delete database");
+    if remove_file(config_path).is_err() {
+        return println!("Failed to delete table");
     }
 
     println!("Deleted table: {}", name);
@@ -137,24 +150,32 @@ pub fn desc_table(table_name: String, database: &String) {
     match content {
         Ok(content) => match String::from_utf8(content) {
             Ok(content) => {
-                let mut max_lengths: [usize;2] = [5,4];
+                let mut max_lengths: [usize;3] = [3,5,4];
 
                 let columns = content.split(";");
-                let mut rows: Vec<[String;2]> = columns.map(|column| {
+                let mut rows: Vec<[String;3]> = columns.map(|column| {
                     let mut rows = column.split(",");
+                    let key = match rows.next() {
+                        Some(key) => String::from(key),
+                        None => String::new()
+                    };
                     let field = rows.next().expect("Field name doesn't exists");
-                    if field.len() > max_lengths[0] {
+                    if field.len() > max_lengths[1] {
                         max_lengths[0] = field.len();
                     }
                     let data_type = rows.next().expect("Data Type doesn't exists");
-                    if data_type.len() > max_lengths[1] {
+                    if data_type.len() > max_lengths[2] {
                         max_lengths[1] = data_type.len();
                     }
 
-                    return [String::from(field), String::from(data_type)];
+                    return [key, String::from(field), String::from(data_type)];
                 }).collect();
 
-                rows.insert(0, [String::from("Field"), String::from("Type")]);
+                rows.insert(0, [
+                    String::from("Key"),
+                    String::from("Field"),
+                    String::from("Type")
+                ]);
 
                 decorate_table(&mut rows, max_lengths);
 
@@ -204,7 +225,7 @@ pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<Tok
     }).collect()
 }
 
-fn decorate_table(list: &mut Vec<[String; 2]>, max_lengths: [usize; 2])  {
+fn decorate_table(list: &mut Vec<[String; 3]>, max_lengths: [usize; 3])  {
     for row in list {
         for (i, cell) in row.into_iter().enumerate() {
             let whitespace_amount: usize = max_lengths[i] - cell.len();
