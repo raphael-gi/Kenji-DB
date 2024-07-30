@@ -160,6 +160,7 @@ fn scan_word(characters: &mut IntoIter<u8>, mut word: Vec<u8>) -> Result<(Token,
     keywords.insert(String::from("STR"), TokenType::STR);
     keywords.insert(String::from("INT"), TokenType::INT);
     keywords.insert(String::from("PK"), TokenType::PK);
+    keywords.insert(String::from("FK"), TokenType::FK);
 
     let key = match String::from_utf8(word.clone()) {
         Ok(key) => key,

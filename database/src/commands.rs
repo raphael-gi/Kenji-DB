@@ -161,11 +161,11 @@ pub fn desc_table(table_name: String, database: &String) {
                     };
                     let field = rows.next().expect("Field name doesn't exists");
                     if field.len() > max_lengths[1] {
-                        max_lengths[0] = field.len();
+                        max_lengths[1] = field.len();
                     }
                     let data_type = rows.next().expect("Data Type doesn't exists");
                     if data_type.len() > max_lengths[2] {
-                        max_lengths[1] = data_type.len();
+                        max_lengths[2] = data_type.len();
                     }
 
                     return [key, String::from(field), String::from(data_type)];
@@ -228,6 +228,8 @@ pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<Tok
 fn decorate_table(list: &mut Vec<[String; 3]>, max_lengths: [usize; 3])  {
     for row in list {
         for (i, cell) in row.into_iter().enumerate() {
+            println!("{}", max_lengths[i]);
+            println!("{}", cell.len());
             let whitespace_amount: usize = max_lengths[i] - cell.len();
             let whitespaces: Vec<u8> = vec![b' ';whitespace_amount];
             cell.push_str(&String::from_utf8(whitespaces).unwrap());

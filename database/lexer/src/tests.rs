@@ -23,7 +23,7 @@ fn scan_number_test() {
 
 #[test]
 fn create_table_test() {
-    let input = "create table test (PK id INT; name STR;);".as_bytes().to_vec();
+    let input = "create table u (PK id INT; name STR; FK to_summin INT;);".as_bytes().to_vec();
     let tokens = scan_tokens(input);
     println!("{:?}", tokens);
 }
