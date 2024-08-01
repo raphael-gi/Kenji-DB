@@ -1,7 +1,9 @@
 use std::vec::IntoIter;
 use lexer::{Token, TokenType};
 
-use crate::{commands::{get_table_column_types, insert_table, table_exists}, errors::{err, err_abrupt_ending, no_db}};
+use crate::errors::{err, err_abrupt_ending, no_db};
+use crate::io::insert;
+use crate::io::{get_table_column_types, table_exists};
 
 pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match database {
@@ -57,7 +59,7 @@ fn handle_columns(tokens: &mut IntoIter<Token>, table_name: &String, database: &
                     let row = values.into_iter().map(|token| { token.value.unwrap() }).collect();
                     let column_size = columns.iter().map(|column| { column.get_type_size() }).collect::<Vec<usize>>();
 
-                    insert_table(table_name, database, row, column_size);
+                    insert::insert_table(table_name, database, row, column_size);
 
                     None
                 },

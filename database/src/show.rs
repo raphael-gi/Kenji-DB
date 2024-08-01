@@ -2,7 +2,8 @@ use std::vec::IntoIter;
 
 use lexer::{Token,TokenType};
 
-use crate::{commands, err, should_execute};
+use crate::{err, should_execute};
+use crate::io::display;
 
 pub fn show(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match tokens.next() {
@@ -20,7 +21,7 @@ pub fn show(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<S
 
 fn show_databases(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     if should_execute(tokens.next()) {
-        commands::show_databases(database);
+        display::show_databases(database);
         return None;
     }
 
@@ -29,7 +30,7 @@ fn show_databases(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Op
 
 fn show_tables(tokens: &mut IntoIter<Token>, database: &String) -> Option<String> {
     if should_execute(tokens.next()) {
-        commands::show_tables(database);
+        display::show_tables(database);
         return None;
     }
     err("Missing ';'")

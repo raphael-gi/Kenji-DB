@@ -1,5 +1,5 @@
 use std::{io::{Read, Write}, net::{SocketAddrV4, TcpListener}, thread, vec::IntoIter};
-use commands::database_exists;
+use crate::io::database_exists;
 use create::create;
 use delete::delete;
 use desc::desc;
@@ -16,8 +16,8 @@ mod delete;
 mod insert;
 mod show;
 mod desc;
-mod commands;
 mod errors;
+mod io;
 
 pub fn spawn_listener(address: SocketAddrV4) {
     let listener = TcpListener::bind(address).unwrap();

@@ -1,112 +1,6 @@
-use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File, OpenOptions}, io::Write, path::Path, u8, vec};
+use std::fs::{read, read_dir};
 
-use lexer::TokenType;
-
-pub struct TableColumn {
-    pub key: Option<TokenType>,
-    pub name: String,
-    pub data_type: String
-}
-
-pub struct Table {
-    pub name: String,
-    pub database: String,
-    pub rows: Vec<TableColumn>
-}
-
-impl Table {
-    pub fn get_row_string(&self) -> String {
-        self.rows.iter().map(|column| {
-            let key = match column.key {
-                Some(key) => key.to_string(),
-                None => String::new()
-            };
-            format!("{},{},{}", key, column.name, column.data_type)
-        }).collect::<Vec<String>>().join(";")
-    }
-}
-
-pub fn create_database(name: String) {
-    match create_dir(get_db_path(&name)) {
-        Ok(..) => println!("Created database: {}", name),
-        Err(..) => println!("Failed to create database")
-    };
-}
-
-pub fn delete_database(name: String) {
-    match remove_dir_all(get_db_path(&name)) {
-        Ok(..) => println!("Deleted database: {}", name),
-        Err(..) => println!("Failed to delete database")
-    }
-}
-
-pub fn create_table(table: Table) {
-    let path = get_table_path(&table.database, &table.name);
-    let config_path = get_table_config_path(&table.database, &table.name);
-
-    if Path::new(&path).exists() {
-        println!("Table already exists");
-        return;
-    }
-
-    if File::create(path).is_err() {
-        return println!("Failed to create table");
-    }
-    match File::create(config_path) {
-        Ok(mut config_file) => {
-            let content = table.get_row_string();
-            config_file.write(content.as_bytes()).unwrap();
-            println!("Created table: {}", table.name);
-        },
-        Err(..) => println!("Failed to create table")
-    };
-}
-
-pub fn delete_table(name: String, database: &String) {
-    let path = get_table_path(database, &name);
-    let config_path = get_table_config_path(database, &name);
-    if !Path::new(&path).exists() || !Path::new(&config_path).exists() {
-        return println!("Table doesn't exists");
-    }
-    if remove_file(path).is_err() {
-        return println!("Failed to delete table");
-    }
-
-    if remove_file(config_path).is_err() {
-        return println!("Failed to delete table");
-    }
-
-    println!("Deleted table: {}", name);
-}
-
-pub fn insert_table(table: &String, database: &String, rows: Vec<String>, column_sizes: Vec<usize>) {
-    let row_size = column_sizes.iter().sum::<usize>();
-
-    let mut insert_values: Vec<u8> = Vec::new();
-
-    for (i, cell) in rows.iter().enumerate() {
-        let size = column_sizes[i];
-        let val = cell.as_bytes();
-        if val.len() > size {
-            println!("Value '{}' is too large", cell);
-            return;
-        }
-        insert_values.write_all(val).expect("Failed to write to buffer");
-    }
-
-    if insert_values.len() > row_size {
-        println!("Provided data too big");
-        return;
-    }
-
-    let path = get_table_path(database, &table);
-    let mut file = OpenOptions::new()
-        .append(true)
-        .open(path)
-        .expect("Failed to open table");
-
-    let _ = file.write_all(&insert_values);
-}
+use crate::io::util::{get_db_path, get_table_config_path};
 
 pub fn show_databases(database: &Option<String>) {
     if let Ok(files) = read_dir("./data") {
@@ -229,28 +123,6 @@ pub fn desc_table(table_name: String, database: &String) {
     }
 }
 
-pub fn database_exists(database: &String) -> bool {
-    let path = get_db_path(database);
-    Path::new(&path).exists()
-}
-pub fn table_exists(database: &String, table_name: &String) -> bool {
-    let path = get_table_config_path(database, table_name);
-    Path::new(&path).exists()
-}
-
-pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<TokenType> {
-    let config_path = get_table_config_path(database, table_name);
-    let content = read(config_path).expect("Table config file not found");
-    let columns = String::from_utf8(content).expect("Non utf8 characters as columns");
-    columns.split(";").map(|column| {
-        let mut rows = column.split(",");
-        let _ = rows.next();
-        let _ = rows.next();
-        let data_type = rows.next().expect("No datatype found");
-        TokenType::get_type_from_str(data_type).expect("Incorrect datatype")
-    }).collect()
-}
-
 fn decorate_table(list: &mut Vec<[String; 3]>, max_lengths: [usize; 3])  {
     for row in list {
         for (i, cell) in row.into_iter().enumerate() {
@@ -280,17 +152,3 @@ fn decorate_listing(list: &mut Vec<String>, max_len: usize) {
     list.insert(2, seperator.clone());
     list.push(seperator);
 }
-
-fn get_table_config_path(db_name: &String, table_name: &String) -> String {
-    let path = get_db_path(db_name);
-    format!("{}/.{}", path, table_name)
-}
-fn get_table_path(db_name: &String, table_name: &String) -> String {
-    let path = get_db_path(db_name);
-    format!("{}/{}", path, table_name)
-}
-
-fn get_db_path(db_name: &String) -> String {
-    format!("./data/{}", db_name)
-}
-

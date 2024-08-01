@@ -2,7 +2,9 @@ use std::vec::IntoIter;
 
 use lexer::{Token,TokenType};
 
-use crate::{commands, errors::{err, err_semicolon, no_db}, get_name, should_execute};
+use crate::{get_name, should_execute};
+use crate::io::delete;
+use crate::errors::{err, err_semicolon, no_db};
 
 pub fn delete(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match tokens.next() {
@@ -25,7 +27,7 @@ fn delete_database(tokens: &mut IntoIter<Token>) -> Option<String> {
     };
 
     if should_execute(tokens.next()) {
-        commands::delete_database(database_name);
+        delete::delete_database(database_name);
         return None;
     }
 
@@ -39,7 +41,7 @@ fn delete_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<Strin
     };
 
     if should_execute(tokens.next()) {
-        commands::delete_table(table_name, database);
+        delete::delete_table(table_name, database);
         return None;
     }
 

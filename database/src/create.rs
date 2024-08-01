@@ -1,7 +1,9 @@
 use std::vec::IntoIter;
 use lexer::{Token,TokenType};
 
-use crate::{commands::{self, Table, TableColumn}, errors::{err, err_semicolon, no_db}, get_name, should_execute};
+use crate::{get_name, should_execute};
+use crate::io::{create, Table, TableColumn};
+use crate::errors::{err, err_semicolon, no_db};
 
 pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     match tokens.next() {
@@ -26,7 +28,7 @@ fn create_database(tokens: &mut IntoIter<Token>) -> Option<String> {
     };
 
     if should_execute(tokens.next()) {
-        commands::create_database(database_name);
+        create::create_database(database_name);
         return None;
     }
 
@@ -42,14 +44,14 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<Strin
     match tokens.next() {
         Some(token) => match token.token_type {
             TokenType::LEFTBRACE => {
-                commands::create_table(Table {
+                create::create_table(Table {
                     name: table_name,
                     database: database.to_string(),
                     rows: get_table_rows(tokens)
-                });
+                })
             },
             TokenType::SEMICOLON => {
-                commands::create_table(Table {
+                create::create_table(Table {
                     name: table_name,
                     database: database.to_string(),
                     rows: Vec::new()
@@ -108,5 +110,4 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
 
     rows
 }
-
 

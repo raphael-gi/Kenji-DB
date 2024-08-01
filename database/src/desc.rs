@@ -2,7 +2,9 @@ use std::vec::IntoIter;
 
 use lexer::{Token, TokenType};
 
-use crate::{commands::desc_table, errors::{err, err_semicolon, no_db}, should_execute};
+use crate::should_execute;
+use crate::io::display;
+use crate::errors::{err, err_semicolon, no_db};
 
 pub fn desc(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
     let database = match database {
@@ -13,7 +15,7 @@ pub fn desc(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<S
         Some(token) => match token.token_type {
             TokenType::IDENTIFIER => {
                 if should_execute(tokens.next()) {
-                    desc_table(token.value.unwrap(), database);
+                    display::desc_table(token.value.unwrap(), database);
                     return None;
                 }
                 err_semicolon()
