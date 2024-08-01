@@ -48,6 +48,13 @@ impl TokenType {
             _ => String::new()
         }
     }
+    pub fn get_type_size(&self) -> usize {
+        match self {
+            Self::INT => 4,
+            Self::STR => 256,
+            _ => 0
+        }
+    }
 }
 
 pub fn scan_tokens(characters: Vec<u8>) -> Vec<Token> {

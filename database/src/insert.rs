@@ -54,9 +54,10 @@ fn handle_columns(tokens: &mut IntoIter<Token>, table_name: &String, database: &
                         }
                     }
 
-                    let columns = values.into_iter().map(|token| { token.value.unwrap() }).collect();
+                    let row = values.into_iter().map(|token| { token.value.unwrap() }).collect();
+                    let column_size = columns.iter().map(|column| { column.get_type_size() }).collect::<Vec<usize>>();
 
-                    insert_table(table_name, database, columns);
+                    insert_table(table_name, database, row, column_size);
 
                     None
                 },

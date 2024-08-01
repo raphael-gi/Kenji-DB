@@ -1,4 +1,4 @@
-use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File}, io::Write, path::Path, u8, vec};
+use std::{fs::{create_dir, read, read_dir, remove_dir_all, remove_file, File, OpenOptions}, io::Write, path::Path, u8, vec};
 
 use lexer::TokenType;
 
@@ -79,8 +79,33 @@ pub fn delete_table(name: String, database: &String) {
     println!("Deleted table: {}", name);
 }
 
-pub fn insert_table(table: &String, database: &String, _columns: Vec<String>) {
-    let _path = get_table_path(database, &table);
+pub fn insert_table(table: &String, database: &String, rows: Vec<String>, column_sizes: Vec<usize>) {
+    let row_size = column_sizes.iter().sum::<usize>();
+
+    let mut insert_values: Vec<u8> = Vec::new();
+
+    for (i, cell) in rows.iter().enumerate() {
+        let size = column_sizes[i];
+        let val = cell.as_bytes();
+        if val.len() > size {
+            println!("Value '{}' is too large", cell);
+            return;
+        }
+        insert_values.write_all(val).expect("Failed to write to buffer");
+    }
+
+    if insert_values.len() > row_size {
+        println!("Provided data too big");
+        return;
+    }
+
+    let path = get_table_path(database, &table);
+    let mut file = OpenOptions::new()
+        .append(true)
+        .open(path)
+        .expect("Failed to open table");
+
+    let _ = file.write_all(&insert_values);
 }
 
 pub fn show_databases(database: &Option<String>) {
@@ -219,6 +244,7 @@ pub fn get_table_column_types(table_name: &String, database: &String) -> Vec<Tok
     let columns = String::from_utf8(content).expect("Non utf8 characters as columns");
     columns.split(";").map(|column| {
         let mut rows = column.split(",");
+        let _ = rows.next();
         let _ = rows.next();
         let data_type = rows.next().expect("No datatype found");
         TokenType::get_type_from_str(data_type).expect("Incorrect datatype")
