@@ -9,6 +9,10 @@ fn main() {
 
     let mut rl = DefaultEditor::new().unwrap();
 
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
+
     loop {
         let input = rl.readline(">> ");
 
@@ -19,14 +23,13 @@ fn main() {
 
         match input {
             Ok(input) => {
+                let _ = rl.add_history_entry(input.as_str());
                 let _ = stream.write(&input.into_bytes());
             },
             Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
                 break;
             }
             Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
                 break;
             },
             Err(err) => {
@@ -49,5 +52,7 @@ fn main() {
             }
         }
     }
+
+    let _ = rl.save_history("history.txt");
 }
 
