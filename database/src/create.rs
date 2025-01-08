@@ -5,20 +5,22 @@ use crate::{get_name, should_execute};
 use crate::io::{create, Table, TableColumn};
 use crate::errors::{err, err_semicolon, no_db};
 
-pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
+pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result<(), String> {
     match tokens.next() {
         Some(token) => {
             match token.token_type {
                 TokenType::DATABASE => create_database(tokens),
                 TokenType::TABLE => match database {
                     Some(database) => create_table(tokens, database),
-                    None => return no_db()
+                    None => no_db()
                 },
-                _ => return err("You may only create a database or table"),
+                _ => err("You may only create a database or table"),
             }
         },
-        None => return err("Nothing to create provided")
-    }
+        None => err("Nothing to create provided")
+    };
+
+    Ok(())
 }
 
 fn create_database(tokens: &mut IntoIter<Token>) -> Option<String> {
