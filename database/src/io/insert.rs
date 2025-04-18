@@ -8,18 +8,21 @@ pub fn insert_table(table: &String, database: &String, rows: Vec<String>, column
 
     for (i, cell) in rows.iter().enumerate() {
         let size = column_sizes[i];
-        let val = cell.as_bytes();
+        let mut val = cell.as_bytes().to_vec();
         if val.len() > size {
             println!("Value '{}' is too large", cell);
             return;
         }
-        insert_values.write_all(val).expect("Failed to write to buffer");
+        val.resize(size, 0);
+        insert_values.write_all(&val).expect("Failed to write to buffer");
     }
 
     if insert_values.len() > row_size {
         println!("Provided data too big");
         return;
     }
+
+    println!("{:?}", insert_values);
 
     let path = get_table_path(database, &table);
     let mut file = OpenOptions::new()

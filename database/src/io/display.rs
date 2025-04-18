@@ -70,7 +70,7 @@ pub fn desc_table(table_name: String, database: &String) {
     match content {
         Ok(content) => match String::from_utf8(content) {
             Ok(content) => {
-                let max_lengths: [usize;3] = [3,5,4];
+                let mut max_lengths: [usize;3] = [3,5,4];
 
                 let columns = content.split(";");
 
@@ -78,7 +78,7 @@ pub fn desc_table(table_name: String, database: &String) {
                     println!("No columns found in this table");
                     return;
                 }
-                let mut rows = desc_get_rows(columns, max_lengths);
+                let mut rows = desc_get_rows(columns, &mut max_lengths);
 
                 rows.insert(0, [
                             String::from("Key"),
@@ -113,7 +113,7 @@ pub fn desc_table(table_name: String, database: &String) {
     }
 }
 
-fn desc_get_rows(columns: Split<'_, &str>, mut max_lengths: [usize; 3]) -> Vec<[String; 3]> {
+fn desc_get_rows(columns: Split<'_, &str>, max_lengths: &mut [usize; 3]) -> Vec<[String; 3]> {
     let rows: Vec<[String;3]> = columns.map(|column| {
         let mut rows = column.split(",");
         let key = match rows.next() {
