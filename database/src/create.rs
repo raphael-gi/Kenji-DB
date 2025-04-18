@@ -3,21 +3,17 @@ use lexer::{Token,TokenType};
 
 use crate::{get_name, should_execute};
 use crate::io::{create, Table, TableColumn};
-use crate::errors::{err_semicolon, DBError, DBErrorKind};
+use crate::errors::{err_invalid_datatype, err_not_interpreted, err_semicolon, DBError, DBErrorKind};
 
 pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result<(), DBError> {
-    match tokens.next() {
-        Some(token) => {
-            match token.token_type {
-                TokenType::DATABASE => create_database(tokens),
-                TokenType::TABLE => match database {
-                    Some(database) => create_table(tokens, database),
-                    None => Err(DBErrorKind::NotUsingDB.into())
-                },
-                _ => Err(DBError::new("You may only create a database or table")),
-            }
+    let token = tokens.next().ok_or(DBError::new("Nothing to create provided"))?;
+    match token.token_type {
+        TokenType::DATABASE => create_database(tokens),
+        TokenType::TABLE => {
+            let db = database.clone().ok_or(DBErrorKind::NotUsingDB.into())?;
+            create_table(tokens, db)
         },
-        None => Err(DBError::new("Nothing to create provided"))
+        _ => Err(DBError::new("You may only create a database or table")),
     }
 }
 
@@ -32,43 +28,31 @@ fn create_database(tokens: &mut IntoIter<Token>) -> Result<(), DBError> {
     return Ok(());
 }
 
-fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Result<(), DBError> {
-    let table_name = get_name(tokens)?;
+fn create_table(tokens: &mut IntoIter<Token>, database: String) -> Result<(), DBError> {
+    let name = get_name(tokens)?;
+    let rows = get_table_rows(tokens)?;
 
-    match tokens.next() {
-        Some(token) => match token.token_type {
-            TokenType::LEFTBRACE => {
-                create::create_table(Table {
-                    name: table_name,
-                    database: database.to_string(),
-                    rows: get_table_rows(tokens)?
-                })
-            },
-            TokenType::SEMICOLON => {
-                create::create_table(Table {
-                    name: table_name,
-                    database: database.to_string(),
-                    rows: Vec::new()
-                });
-            },
-            _ => return Ok(())
-        },
-        None => return Ok(())
-    };
-
+    create::create_table(Table { name, database, rows });
     Ok(())
 }
 
 fn get_table_rows(tokens: &mut IntoIter<Token>) -> Result<Vec<TableColumn>, DBError> {
+    match tokens.next() {
+        Some(token) => match token.token_type {
+            TokenType::LEFTBRACE => {},
+            TokenType::SEMICOLON => {
+                return Ok(Vec::new());
+            },
+            _ => return Err(err_not_interpreted(token))
+        },
+        None => return Err(DBErrorKind::MissingSemicolon.into())
+    };
     let mut rows: Vec<TableColumn> = Vec::new();
 
     loop {
-        let first_token = match tokens.next() {
-            Some(token) => token,
-            None => break
-        };
+        let first_token = tokens.next().ok_or(DBErrorKind::EndOfStatement.into())?;
+
         let key = match first_token.token_type {
-            TokenType::RIGHTBRACE => break,
             TokenType::PK => Some(TokenType::PK),
             TokenType::FK => Some(TokenType::FK),
             _ => None
@@ -81,25 +65,35 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Result<Vec<TableColumn>, DBEr
                 },
                 None => break
             },
-            None => first_token.value.ok_or(DBError::new("Table name can't be a datatype"))?
+            None => first_token.value.ok_or(DBError::new("Invalid column name"))?
         };
 
         let data_type = match tokens.next() {
             Some(token) => match token.token_type {
                 TokenType::STR => String::from("STR"),
                 TokenType::INT => String::from("INT"),
-                _ => break
+                _ => return Err(err_invalid_datatype(token))
             },
-            None => break
+            None => return Err(DBError::new("No datatype provided"))
         };
+
+        let table_column = TableColumn { key, name, data_type };
 
         match tokens.next() {
             Some(token) => match token.token_type {
-                TokenType::SEMICOLON => rows.push(TableColumn {key, name, data_type }),
-                _ => break
+                TokenType::RIGHTBRACE => {
+                    rows.push(table_column);
+                    break;
+                },
+                TokenType::COLON => rows.push(table_column),
+                _ => return Err(DBError::new(format!("Unexpected token: {:?}", token.token_type)))
             },
-            None => break
+            None => return Err(DBErrorKind::EndOfStatement.into())
         };
+    }
+
+    if !should_execute(tokens.next()) {
+        err_semicolon()?
     }
 
     Ok(rows)

@@ -9,10 +9,16 @@ pub struct Token {
     pub value: Option<String>
 }
 
+impl Token {
+    pub fn get_string(self) -> String {
+        self.value.unwrap_or(self.token_type.to_string())
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum TokenType {
     // Single Character
-    LEFTBRACE, RIGHTBRACE, COMMA, SEMICOLON, QUOTATION, MINUS,
+    LEFTBRACE, RIGHTBRACE, COLON, SEMICOLON, QUOTATION, MINUS,
 
     // Literals
     IDENTIFIER, STR, INT, PK, FK,
@@ -45,7 +51,23 @@ impl TokenType {
             &Self::INT => String::from("INTEGER"),
             &Self::PK => String::from("PK"),
             &Self::FK => String::from("FK"),
-            _ => String::new()
+            &Self::LEFTBRACE => String::from("("),
+            &Self::RIGHTBRACE => String::from(")"),
+            &Self::COLON => String::from(","),
+            &Self::SEMICOLON => String::from(";"),
+            &Self::QUOTATION => String::from('"'),
+            &Self::MINUS => String::from("-"),
+            &Self::CREATE => String::from("CREATE"),
+            &Self::DELETE => String::from("DELETE"),
+            &Self::INSERT => String::from("INSERT"),
+            &Self::USE => String::from("USE"),
+            &Self::SHOW => String::from("SHOW"),
+            &Self::DESC => String::from("DESC"),
+            &Self::DATABASE => String::from("DATABASE"),
+            &Self::DATABASES => String::from("DATABASES"),
+            &Self::TABLE => String::from("TABLE"),
+            &Self::TABLES => String::from("TABLES"),
+            &Self::IDENTIFIER => String::from("IDENTIFIER")
         }
     }
     pub fn get_type_size(&self) -> usize {
@@ -255,7 +277,7 @@ fn scan_token(character: u8) -> Result<Option<TokenType>, ()> {
         b';' => Ok(Some(TokenType::SEMICOLON)),
         b'(' => Ok(Some(TokenType::LEFTBRACE)),
         b')' => Ok(Some(TokenType::RIGHTBRACE)),
-        b',' => Ok(Some(TokenType::COMMA)),
+        b',' => Ok(Some(TokenType::COLON)),
         b'"' => Ok(Some(TokenType::QUOTATION)),
         _ => Err(())
     }

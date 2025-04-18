@@ -1,5 +1,15 @@
+use lexer::Token;
+
 pub fn err_semicolon() -> Result<(), DBError> {
     Err(DBErrorKind::MissingSemicolon.into())
+}
+
+pub fn err_not_interpreted(token: Token) -> DBError {
+    DBError::new(format!("Value: '{}' could not be interpreted", token.get_string()))
+}
+
+pub fn err_invalid_datatype(token: Token) -> DBError {
+    DBError::new(format!("Invalid datatype: '{}' could not be interpreted", token.get_string()))
 }
 
 pub struct DBError {

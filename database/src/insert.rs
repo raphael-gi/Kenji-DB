@@ -67,7 +67,7 @@ fn get_insert_values(tokens: &mut IntoIter<Token>) -> Result<Vec<Token>, DBError
         let next_token = tokens.next().ok_or(DBErrorKind::EndOfStatement.into())?;
         match next_token.token_type {
             TokenType::RIGHTBRACE => return Ok(insert_values),
-            TokenType::COMMA => continue,
+            TokenType::COLON => continue,
             _ => return Err(DBError::new("You must seperate your values with a ','"))
         }
     }
