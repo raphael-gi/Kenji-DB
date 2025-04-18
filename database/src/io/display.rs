@@ -1,4 +1,4 @@
-use std::fs::{read, read_dir};
+use std::{fs::{read, read_dir}, str::Split};
 
 use crate::io::util::{get_db_path, get_table_config_path};
 
@@ -66,34 +66,24 @@ pub fn show_tables(database: &String) {
 pub fn desc_table(table_name: String, database: &String) {
     let path = get_table_config_path(database, &table_name);
     let content = read(path);
+
     match content {
         Ok(content) => match String::from_utf8(content) {
             Ok(content) => {
-                let mut max_lengths: [usize;3] = [3,5,4];
+                let max_lengths: [usize;3] = [3,5,4];
 
                 let columns = content.split(";");
-                let mut rows: Vec<[String;3]> = columns.map(|column| {
-                    let mut rows = column.split(",");
-                    let key = match rows.next() {
-                        Some(key) => String::from(key),
-                        None => String::new()
-                    };
-                    let field = rows.next().expect("Field name doesn't exists");
-                    if field.len() > max_lengths[1] {
-                        max_lengths[1] = field.len();
-                    }
-                    let data_type = rows.next().expect("Data Type doesn't exists");
-                    if data_type.len() > max_lengths[2] {
-                        max_lengths[2] = data_type.len();
-                    }
 
-                    return [key, String::from(field), String::from(data_type)];
-                }).collect();
+                if columns.clone().count() <= 1 {
+                    println!("No columns found in this table");
+                    return;
+                }
+                let mut rows = desc_get_rows(columns, max_lengths);
 
                 rows.insert(0, [
-                    String::from("Key"),
-                    String::from("Field"),
-                    String::from("Type")
+                            String::from("Key"),
+                            String::from("Field"),
+                            String::from("Type")
                 ]);
 
                 decorate_table(&mut rows, max_lengths);
@@ -121,6 +111,29 @@ pub fn desc_table(table_name: String, database: &String) {
         },
         Err(err) => println!("{}", err)
     }
+}
+
+fn desc_get_rows(columns: Split<'_, &str>, mut max_lengths: [usize; 3]) -> Vec<[String; 3]> {
+    let rows: Vec<[String;3]> = columns.map(|column| {
+        let mut rows = column.split(",");
+        let key = match rows.next() {
+            Some(key) => String::from(key),
+            None => String::new()
+        };
+        let field = rows.next().expect("Field name doesn't exists");
+        if field.len() > max_lengths[1] {
+            max_lengths[1] = field.len();
+        }
+        let data_type = rows.next().expect("Data Type doesn't exists");
+        if data_type.len() > max_lengths[2] {
+            max_lengths[2] = data_type.len();
+        }
+
+        return [key, String::from(field), String::from(data_type)];
+    }).collect();
+
+    return rows;
+
 }
 
 fn decorate_table(list: &mut Vec<[String; 3]>, max_lengths: [usize; 3])  {
