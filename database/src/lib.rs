@@ -3,7 +3,7 @@ use crate::io::database_exists;
 use create::create;
 use delete::delete;
 use desc::desc;
-use errors::{err,err_semicolon, DBError, DBErrorKind};
+use errors::{DBError, DBErrorKind};
 use insert::insert;
 use lexer::{scan_tokens, Token, TokenType};
 use show::show;
@@ -51,7 +51,7 @@ pub fn spawn_listener(address: SocketAddrV4) {
 
 
                 if let Err(message) = message {
-                    messages.push(message);
+                    messages.push(message.get_message());
                 }
             }
 
@@ -91,15 +91,12 @@ fn should_execute(token: Option<Token>) -> bool {
     }
 }
 
-fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, String> {
-    let token = match tokens.next() {
-        Some(token) => token,
-        None => return Err(String::from("No name provided"))
-    };
+fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, DBError> {
+    let token = tokens.next().ok_or(DBError::new("No name provided"))?;
 
     match token.token_type {
         TokenType::IDENTIFIER => Ok(token.value.unwrap()),
-        _ => Err(String::from("Provided name isn't valid"))
+        _ => Err(DBError::new("Provided name isn't valid"))
     }
 }
 

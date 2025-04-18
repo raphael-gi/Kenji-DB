@@ -1,18 +1,5 @@
-
-pub fn err<S: Into<String>>(error: S) -> Option<String> {
-    Some(error.into())
-}
-
-pub fn no_db() -> Option<String> {
-    err("Not using a database")
-}
-
-pub fn err_semicolon() -> Option<String> {
-    err("Missing ';'")
-}
-
-pub fn err_abrupt_ending() -> Option<String> {
-    err("Unexpected end of statement")
+pub fn err_semicolon() -> Result<(), DBError> {
+    Err(DBErrorKind::MissingSemicolon.into())
 }
 
 pub struct DBError {
@@ -25,6 +12,9 @@ impl DBError {
             message: message.into()
         }
     }
+    pub fn get_message(self) -> String {
+        self.message
+    }
 }
 
 pub enum DBErrorKind {
@@ -34,14 +24,14 @@ pub enum DBErrorKind {
     NothingToShow,
     CantShow,
     InvalidTableName,
-    ExpectedOpenBracket
+    ExpectedOpenBracket,
 }
 
 impl DBErrorKind {
     pub fn into(self) -> DBError {
         let message = match self {
             Self::MissingSemicolon => "Missing ';'",
-            Self::NotUsingDB => "asdfk",
+            Self::NotUsingDB => "Not using a database",
             Self::EndOfStatement => "Unexpected end of statement",
             Self::NothingToShow => "Nothing to show provided",
             Self::CantShow => "Can't show what was provided",

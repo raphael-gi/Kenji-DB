@@ -4,49 +4,39 @@ use lexer::{Token,TokenType};
 
 use crate::{get_name, should_execute};
 use crate::io::delete;
-use crate::errors::{err, err_semicolon, no_db};
+use crate::errors::{err_semicolon, DBError, DBErrorKind};
 
-pub fn delete(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result<(), String> {
-    match tokens.next() {
-        Some(token) => match token.token_type {
-            TokenType::DATABASE => delete_database(tokens),
-            TokenType::TABLE => match database {
-                Some(database) => delete_table(tokens, database),
-                None => return Err(no_db().unwrap())
-            },
-            _ => return Err(err("You may only delete a database or table").unwrap())
+pub fn delete(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result<(), DBError> {
+    let token = tokens.next().ok_or(DBError::new("Nothing too delete"))?;
+    match token.token_type {
+        TokenType::DATABASE => delete_database(tokens),
+        TokenType::TABLE => match database {
+            Some(database) => delete_table(tokens, database),
+            None => return Err(DBErrorKind::NotUsingDB.into())
         },
-        None => return Err(err("Nothing too delete").unwrap())
-    };
+        _ => return Err(DBError::new("You may only delete a database or table"))
+    }
+}
 
+fn delete_database(tokens: &mut IntoIter<Token>) -> Result<(), DBError> {
+    let database_name = get_name(tokens)?;
+
+    if !should_execute(tokens.next()) {
+        err_semicolon()?;
+    }
+
+    delete::delete_database(database_name);
     Ok(())
 }
 
-fn delete_database(tokens: &mut IntoIter<Token>) -> Option<String> {
-    let database_name = match get_name(tokens) {
-        Ok(name) => name,
-        Err(err) => return Some(err)
-    };
+fn delete_table(tokens: &mut IntoIter<Token>, database: &String) -> Result<(), DBError> {
+    let table_name = get_name(tokens)?;
 
-    if should_execute(tokens.next()) {
-        delete::delete_database(database_name);
-        return None;
+    if !should_execute(tokens.next()) {
+        err_semicolon()?;
     }
 
-    err_semicolon()
-}
-
-fn delete_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<String> {
-    let table_name = match get_name(tokens) {
-        Ok(name) => name,
-        Err(..) => return None
-    };
-
-    if should_execute(tokens.next()) {
-        delete::delete_table(table_name, database);
-        return None;
-    }
-
-    err_semicolon()
+    delete::delete_table(table_name, database);
+    Ok(())
 }
 

@@ -16,9 +16,8 @@ pub fn insert(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result
     if !table_exists(db, table_name) {
         return Err(DBError::new("Table not found"));
     }
-    handle_columns(tokens, table_name, db);
 
-    Ok(())
+    handle_columns(tokens, table_name, db)
 }
 
 fn handle_columns(tokens: &mut IntoIter<Token>, table_name: &String, database: &String) -> Result<(), DBError> {
