@@ -41,7 +41,7 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Result<(), D
                 create::create_table(Table {
                     name: table_name,
                     database: database.to_string(),
-                    rows: get_table_rows(tokens)
+                    rows: get_table_rows(tokens)?
                 })
             },
             TokenType::SEMICOLON => {
@@ -59,7 +59,7 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Result<(), D
     Ok(())
 }
 
-fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
+fn get_table_rows(tokens: &mut IntoIter<Token>) -> Result<Vec<TableColumn>, DBError> {
     let mut rows: Vec<TableColumn> = Vec::new();
 
     loop {
@@ -81,7 +81,7 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
                 },
                 None => break
             },
-            None => first_token.value.unwrap()
+            None => first_token.value.ok_or(DBError::new("Table name can't be a datatype"))?
         };
 
         let data_type = match tokens.next() {
@@ -102,6 +102,6 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
         };
     }
 
-    rows
+    Ok(rows)
 }
 
