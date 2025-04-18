@@ -3,43 +3,37 @@ use lexer::{Token,TokenType};
 
 use crate::{get_name, should_execute};
 use crate::io::{create, Table, TableColumn};
-use crate::errors::{err, err_semicolon, no_db};
+use crate::errors::{err_semicolon, DBError, DBErrorKind};
 
-pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Option<String> {
+pub fn create(tokens: &mut IntoIter<Token>, database: &Option<String>) -> Result<(), DBError> {
     match tokens.next() {
         Some(token) => {
             match token.token_type {
                 TokenType::DATABASE => create_database(tokens),
                 TokenType::TABLE => match database {
                     Some(database) => create_table(tokens, database),
-                    None => return no_db()
+                    None => Err(DBErrorKind::NotUsingDB.into())
                 },
-                _ => return err("You may only create a database or table"),
+                _ => Err(DBError::new("You may only create a database or table")),
             }
         },
-        None => return err("Nothing to create provided")
+        None => Err(DBError::new("Nothing to create provided"))
     }
 }
 
-fn create_database(tokens: &mut IntoIter<Token>) -> Option<String> {
-    let database_name = match get_name(tokens) {
-        Ok(name) => name,
-        Err(err) => return Some(err)
-    };
+fn create_database(tokens: &mut IntoIter<Token>) -> Result<(), DBError> {
+    let database_name = get_name(tokens)?;
 
-    if should_execute(tokens.next()) {
-        create::create_database(database_name);
-        return None;
+    if !should_execute(tokens.next()) {
+        err_semicolon()?
     }
 
-    err_semicolon()
+    create::create_database(database_name);
+    return Ok(());
 }
 
-fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<String> {
-    let table_name = match get_name(tokens) {
-        Ok(name) => name,
-        Err(err) => return Some(err)
-    };
+fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Result<(), DBError> {
+    let table_name = get_name(tokens)?;
 
     match tokens.next() {
         Some(token) => match token.token_type {
@@ -47,7 +41,7 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<Strin
                 create::create_table(Table {
                     name: table_name,
                     database: database.to_string(),
-                    rows: get_table_rows(tokens)
+                    rows: get_table_rows(tokens)?
                 })
             },
             TokenType::SEMICOLON => {
@@ -57,15 +51,15 @@ fn create_table(tokens: &mut IntoIter<Token>, database: &String) -> Option<Strin
                     rows: Vec::new()
                 });
             },
-            _ => return None
+            _ => return Ok(())
         },
-        None => return None
+        None => return Ok(())
     };
 
-    None
+    Ok(())
 }
 
-fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
+fn get_table_rows(tokens: &mut IntoIter<Token>) -> Result<Vec<TableColumn>, DBError> {
     let mut rows: Vec<TableColumn> = Vec::new();
 
     loop {
@@ -87,7 +81,7 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
                 },
                 None => break
             },
-            None => first_token.value.unwrap()
+            None => first_token.value.ok_or(DBError::new("Table name can't be a datatype"))?
         };
 
         let data_type = match tokens.next() {
@@ -108,6 +102,6 @@ fn get_table_rows(tokens: &mut IntoIter<Token>) -> Vec<TableColumn> {
         };
     }
 
-    rows
+    Ok(rows)
 }
 

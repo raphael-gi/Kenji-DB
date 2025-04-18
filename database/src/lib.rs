@@ -3,7 +3,7 @@ use crate::io::database_exists;
 use create::create;
 use delete::delete;
 use desc::desc;
-use errors::{err,err_semicolon};
+use errors::{DBError, DBErrorKind};
 use insert::insert;
 use lexer::{scan_tokens, Token, TokenType};
 use show::show;
@@ -49,8 +49,9 @@ pub fn spawn_listener(address: SocketAddrV4) {
                     None => break
                 };
 
-                if let Some(message) = message {
-                    messages.push(message);
+
+                if let Err(message) = message {
+                    messages.push(message.get_message());
                 }
             }
 
@@ -59,25 +60,25 @@ pub fn spawn_listener(address: SocketAddrV4) {
     });
 }
 
-fn set_database(tokens: &mut IntoIter<Token>, prev_db: &mut Option<String>) -> Option<String> {
+fn set_database(tokens: &mut IntoIter<Token>, prev_db: &mut Option<String>) -> Result<(), DBError> {
     let database_name = match tokens.next() {
         Some(token) => match token.token_type {
             TokenType::IDENTIFIER => token.value.unwrap(),
-            _ => return err("Not a valid database name")
+            _ => return Err(DBError::new("Not a valid database name"))
         },
-        None => return err("Nothing to use provided")
+        None => return Err(DBError::new("Nothing to use provided"))
     };
 
     if !database_exists(&database_name) {
-        return err("Database not found");
+        return Err(DBError::new("Database not found"));
     }
 
     if should_execute(tokens.next()) {
         *prev_db = Some(database_name.clone());
-        return Some(format!("Using: {}", database_name));
+        return Err(DBError::new(format!("Using: {}", database_name)));
     }
 
-    err_semicolon()
+    Err(DBErrorKind::MissingSemicolon.into())
 }
 
 fn should_execute(token: Option<Token>) -> bool {
@@ -90,15 +91,12 @@ fn should_execute(token: Option<Token>) -> bool {
     }
 }
 
-fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, String> {
-    let token = match tokens.next() {
-        Some(token) => token,
-        None => return Err(String::from("No name provided"))
-    };
+fn get_name(tokens: &mut IntoIter<Token>) -> Result<String, DBError> {
+    let token = tokens.next().ok_or(DBError::new("No name provided"))?;
 
     match token.token_type {
         TokenType::IDENTIFIER => Ok(token.value.unwrap()),
-        _ => Err(String::from("Provided name isn't valid"))
+        _ => Err(DBError::new("Provided name isn't valid"))
     }
 }
 
